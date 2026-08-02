@@ -544,14 +544,14 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                   />
                 </div>
 
-                {/* MEDIA & COVER IMAGE */}
-                <div className="p-4 rounded-xl bg-white/[0.02] border border-white/10 space-y-3">
+                {/* MEDIA, COVER IMAGE & IN-GAME SCREENSHOTS */}
+                <div className="p-4 rounded-xl bg-white/[0.02] border border-white/10 space-y-4">
                   <h4 className="text-[10px] font-mono font-bold uppercase tracking-widest text-cyan-400 flex items-center gap-2">
-                    <Image className="w-4 h-4" /> Cover Image & Screenshots
+                    <Image className="w-4 h-4" /> Cover Image & Media Assets
                   </h4>
 
                   <div>
-                    <label className="block text-[11px] font-mono text-slate-400 mb-1">Cover Image URL / File Upload</label>
+                    <label className="block text-[11px] font-mono text-slate-400 mb-1">Main Cover Image URL / Upload</label>
                     <div className="flex gap-2">
                       <input
                         type="text"
@@ -572,11 +572,87 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                     </div>
                   </div>
 
+                  {/* IN-GAME SCREENSHOTS GALLERY */}
+                  <div className="pt-2 border-t border-white/5 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-[11px] font-mono font-bold uppercase tracking-wider text-slate-300">
+                        In-Game Screenshots ({formData.screenshots?.length || 0})
+                      </label>
+                      <label className="px-3 py-1.5 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 rounded-xl text-xs font-mono cursor-pointer flex items-center gap-1.5 transition-colors">
+                        <Upload className="w-3.5 h-3.5 text-cyan-400" />
+                        <span>Add Screenshot File</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleFileUpload(e, 'screenshot')}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+
+                    {/* Screenshot Previews Grid */}
+                    {formData.screenshots && formData.screenshots.length > 0 ? (
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        {formData.screenshots.map((url, idx) => (
+                          <div key={idx} className="relative group rounded-xl overflow-hidden border border-white/10 bg-black/40 aspect-video">
+                            <img src={url} alt={`Screenshot ${idx + 1}`} className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    screenshots: prev.screenshots.filter((_, i) => i !== idx)
+                                  }));
+                                }}
+                                className="p-1.5 rounded-lg bg-rose-500/80 hover:bg-rose-600 text-white text-xs font-mono transition-colors"
+                                title="Delete Screenshot"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                            <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded bg-black/70 text-[9px] font-mono text-slate-300">
+                              #{idx + 1}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs font-mono text-slate-500 italic">No in-game screenshots added yet.</p>
+                    )}
+
+                    {/* Quick Image URL Adder */}
+                    <div className="flex gap-2 pt-1">
+                      <input
+                        type="text"
+                        id="custom-screenshot-url-input"
+                        placeholder="Or paste direct image URL (https://...)"
+                        className="flex-1 px-3 py-1.5 bg-white/[0.03] border border-white/10 rounded-xl text-xs text-white font-mono"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const el = document.getElementById('custom-screenshot-url-input') as HTMLInputElement;
+                          if (el && el.value.trim()) {
+                            setFormData((prev) => ({
+                              ...prev,
+                              screenshots: [...(prev.screenshots || []), el.value.trim()]
+                            }));
+                            el.value = '';
+                          }
+                        }}
+                        className="px-3 py-1.5 bg-white/[0.06] hover:bg-white/[0.1] text-slate-200 border border-white/10 rounded-xl text-xs font-mono cursor-pointer"
+                      >
+                        Add URL
+                      </button>
+                    </div>
+                  </div>
+
                   <div>
                     <label className="block text-[11px] font-mono text-slate-400 mb-1">Gameplay Trailer YouTube Embed URL</label>
                     <input
                       type="text"
-                      placeholder="e.g. https.youtube.com/embed/XXXXXX"
+                      placeholder="e.g. https://www.youtube.com/embed/XXXXXX"
                       value={formData.trailerUrl || ''}
                       onChange={(e) => setFormData({ ...formData, trailerUrl: e.target.value })}
                       className="w-full px-3 py-2 bg-white/[0.03] border border-white/10 rounded-xl text-xs text-white font-mono"
