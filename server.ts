@@ -36,7 +36,7 @@ function getStoredGames(): GameProject[] {
     if (fs.existsSync(GAMES_FILE)) {
       const data = fs.readFileSync(GAMES_FILE, 'utf-8');
       const games = JSON.parse(data);
-      if (Array.isArray(games) && games.length > 0) {
+      if (Array.isArray(games)) {
         return games;
       }
     }
@@ -58,33 +58,6 @@ function saveStoredGames(games: GameProject[]) {
   }
 }
 
-// Helper: Seed dummy zip build files so initial projects are instantly downloadable
-function seedSampleBuildFiles() {
-  const sampleBuilds = [
-    { name: 'AetherRift_v1.3.0_Win64.zip', text: 'Unity Build Archive: Aether Rift Windows 64-bit Edition v1.3.0\nExecutable: AetherRift.exe' },
-    { name: 'AetherRift_v1.3.0_macOS.zip', text: 'Unity Build Archive: Aether Rift macOS Apple Silicon Edition v1.3.0\nApp: AetherRift.app' },
-    { name: 'AetherRift_v1.3.0_Linux.AppImage', text: 'Unity Build Archive: Aether Rift Linux Executable v1.3.0' },
-    { name: 'Eldoria_Demo_v0.8.2_Win.zip', text: 'Unity Build Archive: Chronicles of Eldoria Windows Demo v0.8.2' },
-    { name: 'Eldoria_Demo_v0.8.2_Mac.zip', text: 'Unity Build Archive: Chronicles of Eldoria macOS Demo v0.8.2' },
-    { name: 'NeonVelocity_WebGL_v2.0.0.zip', text: 'Unity WebGL Build Package: Neon Velocity Browser Version' },
-    { name: 'NeonVelocity_v2.0.0.apk', text: 'Unity Android APK Package: Neon Velocity v2.0.0' },
-    { name: 'NeonVelocity_v2.0.0_Win64.zip', text: 'Unity Build Archive: Neon Velocity Windows Standalone' },
-    { name: 'AstralEchoes_v1.1.0_Win64.zip', text: 'Unity Build Archive: Astral Echoes Windows Edition' },
-    { name: 'AstralEchoes_v1.1.0_Mac.zip', text: 'Unity Build Archive: Astral Echoes macOS Universal Build' }
-  ];
-
-  sampleBuilds.forEach((build) => {
-    const filePath = path.join(BUILDS_DIR, build.name);
-    if (!fs.existsSync(filePath)) {
-      // Create a small text dummy file simulating a zip archive
-      const content = Buffer.from(`PK\x03\x04 Unity Game Build Package: ${build.name}\n${build.text}\nCreated for Unity Developer Portfolio Showcase.`);
-      fs.writeFileSync(filePath, content);
-    }
-  });
-}
-
-// Seed build files on server boot
-seedSampleBuildFiles();
 
 // Multer Storage Configuration for File Uploads
 const storage = multer.diskStorage({
@@ -356,6 +329,9 @@ app.post('/api/upload', requireAdminAuth, upload.single('file'), (req, res) => {
   });
 });
 
+// Export Express app for serverless function deployments (e.g. Vercel)
+export default app;
+
 // Vite Middleware for Development and Static Express Serving in Production
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {
@@ -377,4 +353,6 @@ async function startServer() {
   });
 }
 
-startServer();
+if (!process.env.VERCEL && !process.env.NOW_REGION) {
+  startServer();
+}

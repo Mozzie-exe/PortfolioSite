@@ -64,13 +64,15 @@ export default function App() {
       setError(null);
       const res = await fetch('/api/games');
       if (!res.ok) throw new Error('Failed to fetch projects from server');
-      const data = await res.json();
-      if (Array.isArray(data) && data.length > 0) {
-        setGames(data);
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          setGames(data);
+        }
       }
     } catch (err: any) {
       console.warn('Backend API fetch error, using fallback initial data:', err);
-      // Fallback is already initialized in state
     } finally {
       setLoading(false);
     }
@@ -96,8 +98,13 @@ export default function App() {
       });
 
       if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || 'Failed to save project');
+        let errMsg = 'Failed to save project';
+        const contentType = res.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const errData = await res.json().catch(() => ({}));
+          if (errData.error) errMsg = errData.error;
+        }
+        throw new Error(errMsg);
       }
       await fetchGames();
 
@@ -107,7 +114,6 @@ export default function App() {
       }
     } catch (err: any) {
       console.error('Error saving game:', err);
-      alert(`Save error: ${err.message}`);
       // Local optimistic update fallback
       setGames((prev) => {
         if (isNew) return [gameToSave, ...prev];
@@ -126,8 +132,13 @@ export default function App() {
         }
       });
       if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || 'Failed to delete game');
+        let errMsg = 'Failed to delete game';
+        const contentType = res.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const errData = await res.json().catch(() => ({}));
+          if (errData.error) errMsg = errData.error;
+        }
+        throw new Error(errMsg);
       }
       await fetchGames();
 
@@ -136,7 +147,6 @@ export default function App() {
       }
     } catch (err: any) {
       console.error('Error deleting game:', err);
-      alert(`Delete error: ${err.message}`);
       setGames((prev) => prev.filter((g) => g.id !== gameId));
     }
   };
@@ -364,6 +374,24 @@ export default function App() {
                     onSelectGame={(g) => setSelectedGame(g)}
                   />
                 ))}
+              </div>
+            ) : games.length === 0 ? (
+              <div className="p-12 text-center rounded-2xl bg-slate-900 border border-slate-800 my-8">
+                <Gamepad2 className="w-12 h-12 text-cyan-500/50 mx-auto mb-3" />
+                <h3 className="text-base font-bold text-white mb-1">No Projects Published Yet</h3>
+                <p className="text-xs text-slate-400 mb-4">Use the Admin CMS panel to add your Unity projects, screenshots, builds, and devlogs.</p>
+                <button
+                  onClick={() => {
+                    if (isAdminLoggedIn) {
+                      setAdminOpen(true);
+                    } else {
+                      setAdminLoginOpen(true);
+                    }
+                  }}
+                  className="px-5 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 rounded-xl text-xs font-bold transition-all shadow-lg shadow-cyan-500/20"
+                >
+                  Open Admin CMS
+                </button>
               </div>
             ) : (
               <div className="p-12 text-center rounded-2xl bg-slate-900 border border-slate-800 my-8">

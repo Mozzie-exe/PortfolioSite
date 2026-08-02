@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Lock, KeyRound, ShieldCheck, ShieldAlert, Eye, EyeOff, X, ArrowRight, Sparkles } from 'lucide-react';
+import { Lock, KeyRound, ShieldCheck, ShieldAlert, Eye, EyeOff, X, ArrowRight } from 'lucide-react';
 
 interface AdminLoginModalProps {
   onClose: () => void;
@@ -14,31 +14,57 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ onClose, onSuc
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!password.trim()) return;
+    const entered = password.trim();
+    if (!entered) return;
 
     setLoading(true);
     setErrorMsg(null);
+
+    let apiSuccess = false;
+    let apiToken = entered;
 
     try {
       const res = await fetch('/api/admin/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: password.trim() })
+        body: JSON.stringify({ password: entered })
       });
 
-      const data = await res.json();
-
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Invalid admin password');
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const data = await res.json();
+        if (res.ok && data && data.success) {
+          apiSuccess = true;
+          apiToken = data.token || entered;
+        } else if (data && data.error) {
+          setErrorMsg(data.error);
+          setLoading(false);
+          return;
+        }
       }
-
-      // Login successful
-      onSuccessLogin(data.token || password.trim());
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Authentication failed. Please check your admin password.');
-    } finally {
-      setLoading(false);
+    } catch (err) {
+      console.warn('Backend API verify unreachable or static deployment, using fallback check:', err);
     }
+
+    if (apiSuccess) {
+      onSuccessLogin(apiToken);
+      setLoading(false);
+      return;
+    }
+
+    // Client-side fallback check for static hosting (Vercel / GitHub Pages)
+    const storedToken = localStorage.getItem('mozzie_admin_token');
+    const validKeys = ['!X030507akg', 'mozzie2026'];
+    if (storedToken) validKeys.push(storedToken);
+
+    if (validKeys.includes(entered)) {
+      onSuccessLogin(entered);
+      setLoading(false);
+      return;
+    }
+
+    setErrorMsg('Incorrect admin password. Please check your passcode and try again.');
+    setLoading(false);
   };
 
   return (
@@ -107,19 +133,6 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ onClose, onSuc
                 className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-
-            {/* Default key hint pill for convenience */}
-            <div className="mt-2.5 flex items-center justify-between text-[11px] font-mono">
-              <span className="text-slate-500">Default passcode:</span>
-              <button
-                type="button"
-                onClick={() => setPassword('mozzie2026')}
-                className="px-2 py-0.5 rounded bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 transition-colors cursor-pointer flex items-center gap-1"
-              >
-                <Sparkles className="w-3 h-3 text-cyan-400" />
-                <span>Fill "mozzie2026"</span>
               </button>
             </div>
           </div>
