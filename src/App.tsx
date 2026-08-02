@@ -12,9 +12,25 @@ import { AboutDevModal } from './components/AboutDevModal';
 import { Gamepad2, Layers, RefreshCw, Sparkles, AlertCircle } from 'lucide-react';
 
 export default function App() {
-  const [games, setGames] = useState<GameProject[]>(INITIAL_GAMES);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [games, setGames] = useState<GameProject[]>(() => {
+    const local = localStorage.getItem('mozzie_portfolio_games');
+    if (local) {
+      try {
+        const parsed = JSON.parse(local);
+        if (Array.isArray(parsed)) return parsed;
+      } catch (e) {
+        console.warn('Failed to parse local games storage');
+      }
+    }
+    return INITIAL_GAMES;
+  });
+  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Sync games to localStorage whenever games state changes
+  useEffect(() => {
+    localStorage.setItem('mozzie_portfolio_games', JSON.stringify(games));
+  }, [games]);
 
   // Active Selected Game for Detail View
   const [selectedGame, setSelectedGame] = useState<GameProject | null>(null);
@@ -57,22 +73,21 @@ export default function App() {
     sortBy: 'featured'
   });
 
-  // Fetch games from backend API
+  // Fetch games from backend API (if present)
   const fetchGames = async () => {
     try {
       setLoading(true);
       setError(null);
       const res = await fetch('/api/games');
-      if (!res.ok) throw new Error('Failed to fetch projects from server');
       const contentType = res.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
+      if (res.ok && contentType && contentType.includes('application/json')) {
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
           setGames(data);
         }
       }
     } catch (err: any) {
-      console.warn('Backend API fetch error, using fallback initial data:', err);
+      console.warn('Backend API fetch error or static deployment, using local state:', err);
     } finally {
       setLoading(false);
     }
@@ -82,13 +97,23 @@ export default function App() {
     fetchGames();
   }, []);
 
-  // Update game in API
+  // Update game in API with local optimistic update
   const handleSaveGame = async (gameToSave: GameProject, isNew: boolean) => {
+    // Always update local state first for immediate UI & LocalStorage persistence
+    setGames((prev) => {
+      if (isNew) return [gameToSave, ...prev];
+      return prev.map((g) => (g.id === gameToSave.id ? gameToSave : g));
+    });
+
+    if (selectedGame && selectedGame.id === gameToSave.id) {
+      setSelectedGame(gameToSave);
+    }
+
     try {
       const url = isNew ? '/api/games' : `/api/games/${gameToSave.id}`;
       const method = isNew ? 'POST' : 'PUT';
 
-      const res = await fetch(url, {
+      await fetch(url, {
         method,
         headers: { 
           'Content-Type': 'application/json',
@@ -96,58 +121,27 @@ export default function App() {
         },
         body: JSON.stringify(gameToSave)
       });
-
-      if (!res.ok) {
-        let errMsg = 'Failed to save project';
-        const contentType = res.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-          const errData = await res.json().catch(() => ({}));
-          if (errData.error) errMsg = errData.error;
-        }
-        throw new Error(errMsg);
-      }
-      await fetchGames();
-
-      // If currently viewing this game, update detail view
-      if (selectedGame && selectedGame.id === gameToSave.id) {
-        setSelectedGame(gameToSave);
-      }
     } catch (err: any) {
-      console.error('Error saving game:', err);
-      // Local optimistic update fallback
-      setGames((prev) => {
-        if (isNew) return [gameToSave, ...prev];
-        return prev.map((g) => (g.id === gameToSave.id ? gameToSave : g));
-      });
+      console.warn('Backend save API unavailable, saved to browser storage:', err);
     }
   };
 
-  // Delete game in API
+  // Delete game in API with local state update
   const handleDeleteGame = async (gameId: string) => {
+    setGames((prev) => prev.filter((g) => g.id !== gameId));
+    if (selectedGame?.id === gameId) {
+      setSelectedGame(null);
+    }
+
     try {
-      const res = await fetch(`/api/games/${gameId}`, { 
+      await fetch(`/api/games/${gameId}`, { 
         method: 'DELETE',
         headers: {
           'x-admin-key': adminToken
         }
       });
-      if (!res.ok) {
-        let errMsg = 'Failed to delete game';
-        const contentType = res.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-          const errData = await res.json().catch(() => ({}));
-          if (errData.error) errMsg = errData.error;
-        }
-        throw new Error(errMsg);
-      }
-      await fetchGames();
-
-      if (selectedGame?.id === gameId) {
-        setSelectedGame(null);
-      }
     } catch (err: any) {
-      console.error('Error deleting game:', err);
-      setGames((prev) => prev.filter((g) => g.id !== gameId));
+      console.warn('Backend delete API unavailable, removed from browser storage:', err);
     }
   };
 

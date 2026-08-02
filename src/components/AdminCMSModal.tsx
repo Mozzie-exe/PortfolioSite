@@ -151,13 +151,27 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
     });
   };
 
-  // Upload file handler to Express /api/upload
+  // Helper to convert file to Base64 data URL for static/Vercel client fallback
+  const readFileAsDataUrl = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (err) => reject(err);
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // Upload file handler with API + Base64 client fallback for Vercel
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, targetField: 'cover' | 'screenshot' | 'build') => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setUploading(true);
-    setUploadProgressMsg(`Uploading ${file.name}...`);
+    setUploadProgressMsg(`Processing ${file.name}...`);
+
+    let uploadedUrl: string | null = null;
+    let uploadedFileName = file.name;
+    let uploadedFileSize = `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
 
     try {
       const uploadFormData = new FormData();
@@ -174,29 +188,46 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
         body: uploadFormData
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Upload failed');
-
-      if (targetField === 'cover') {
-        setFormData((prev) => ({ ...prev, coverImage: data.fileUrl }));
-      } else if (targetField === 'screenshot') {
-        setFormData((prev) => ({
-          ...prev,
-          screenshots: [...(prev.screenshots || []), data.fileUrl]
-        }));
-      } else if (targetField === 'build') {
-        setNewBuildFileUrl(data.fileUrl);
-        setNewBuildFileName(data.fileName);
-        setNewBuildFileSize(data.fileSize);
+      const contentType = res.headers.get('content-type');
+      if (res.ok && contentType && contentType.includes('application/json')) {
+        const data = await res.json();
+        if (data.fileUrl) {
+          uploadedUrl = data.fileUrl;
+          if (data.fileName) uploadedFileName = data.fileName;
+          if (data.fileSize) uploadedFileSize = data.fileSize;
+        }
       }
-
-      setUploadProgressMsg('File uploaded successfully!');
-      setTimeout(() => setUploadProgressMsg(''), 3000);
-    } catch (err: any) {
-      alert(`File upload failed: ${err.message}`);
-    } finally {
-      setUploading(false);
+    } catch (err) {
+      console.warn('Backend API upload unavailable or static deployment, using client-side file reader:', err);
     }
+
+    // If server upload not available or returned non-JSON/404, convert to Data URL
+    if (!uploadedUrl) {
+      try {
+        uploadedUrl = await readFileAsDataUrl(file);
+      } catch (err) {
+        alert('Could not process selected file.');
+        setUploading(false);
+        return;
+      }
+    }
+
+    if (targetField === 'cover') {
+      setFormData((prev) => ({ ...prev, coverImage: uploadedUrl! }));
+    } else if (targetField === 'screenshot') {
+      setFormData((prev) => ({
+        ...prev,
+        screenshots: [...(prev.screenshots || []), uploadedUrl!]
+      }));
+    } else if (targetField === 'build') {
+      setNewBuildFileUrl(uploadedUrl!);
+      setNewBuildFileName(uploadedFileName);
+      setNewBuildFileSize(uploadedFileSize);
+    }
+
+    setUploadProgressMsg('File attached successfully!');
+    setTimeout(() => setUploadProgressMsg(''), 3000);
+    setUploading(false);
   };
 
   // Add Build to list
