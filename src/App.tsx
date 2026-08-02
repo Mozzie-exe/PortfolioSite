@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { GameProject, FilterState } from './types';
+import { GameProject, FilterState, ReviewItem } from './types';
 import { INITIAL_GAMES } from './data/initialGames';
 import { Header } from './components/Header';
 import { HeroFeatured } from './components/HeroFeatured';
@@ -10,6 +10,14 @@ import { AdminCMSModal } from './components/AdminCMSModal';
 import { AdminLoginModal } from './components/AdminLoginModal';
 import { AboutDevModal } from './components/AboutDevModal';
 import { Gamepad2, Layers, RefreshCw, Sparkles, AlertCircle } from 'lucide-react';
+import {
+  subscribeGames,
+  saveGameToFirestore,
+  deleteGameFromFirestore,
+  addReviewToFirestore,
+  incrementLikesInFirestore,
+  incrementDownloadsInFirestore
+} from './lib/firebase';
 
 export default function App() {
   const [games, setGames] = useState<GameProject[]>(() => {
@@ -24,16 +32,41 @@ export default function App() {
     }
     return INITIAL_GAMES;
   });
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Sync games to localStorage whenever games state changes
+  // Sync games to localStorage whenever games state changes as a fast cache fallback
   useEffect(() => {
     localStorage.setItem('mozzie_portfolio_games', JSON.stringify(games));
   }, [games]);
 
+  // Realtime Firestore Subscription for global persistence across all IPs & devices
+  useEffect(() => {
+    setLoading(true);
+    const unsubscribe = subscribeGames(
+      (firestoreGames) => {
+        setGames(firestoreGames);
+        setLoading(false);
+      },
+      (err) => {
+        console.warn('Firestore subscription failed, using local/cached state:', err);
+        setLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, []);
+
   // Active Selected Game for Detail View
   const [selectedGame, setSelectedGame] = useState<GameProject | null>(null);
+
+  // Keep selectedGame synchronized with updated games list
+  useEffect(() => {
+    if (selectedGame) {
+      const updated = games.find((g) => g.id === selectedGame.id);
+      if (updated) setSelectedGame(updated);
+    }
+  }, [games]);
 
   // Admin Auth State
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(() => {
@@ -73,33 +106,16 @@ export default function App() {
     sortBy: 'featured'
   });
 
-  // Fetch games from backend API (if present)
-  const fetchGames = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const res = await fetch('/api/games');
-      const contentType = res.headers.get('content-type');
-      if (res.ok && contentType && contentType.includes('application/json')) {
-        const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
-          setGames(data);
-        }
-      }
-    } catch (err: any) {
-      console.warn('Backend API fetch error or static deployment, using local state:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchGames();
-  }, []);
-
-  // Update game in API with local optimistic update
+  // Save game project to Firestore & Express API
   const handleSaveGame = async (gameToSave: GameProject, isNew: boolean) => {
-    // Always update local state first for immediate UI & LocalStorage persistence
+    // Save directly to Firestore for global cross-device synchronization
+    try {
+      await saveGameToFirestore(gameToSave);
+    } catch (err) {
+      console.error('Firestore save error:', err);
+    }
+
+    // Local optimistic update
     setGames((prev) => {
       if (isNew) return [gameToSave, ...prev];
       return prev.map((g) => (g.id === gameToSave.id ? gameToSave : g));
@@ -109,6 +125,7 @@ export default function App() {
       setSelectedGame(gameToSave);
     }
 
+    // Try Express backend if running
     try {
       const url = isNew ? '/api/games' : `/api/games/${gameToSave.id}`;
       const method = isNew ? 'POST' : 'PUT';
@@ -122,12 +139,18 @@ export default function App() {
         body: JSON.stringify(gameToSave)
       });
     } catch (err: any) {
-      console.warn('Backend save API unavailable, saved to browser storage:', err);
+      console.warn('Backend save API unavailable, saved to Firestore & browser storage:', err);
     }
   };
 
-  // Delete game in API with local state update
+  // Delete game in Firestore & API
   const handleDeleteGame = async (gameId: string) => {
+    try {
+      await deleteGameFromFirestore(gameId);
+    } catch (err) {
+      console.error('Firestore delete error:', err);
+    }
+
     setGames((prev) => prev.filter((g) => g.id !== gameId));
     if (selectedGame?.id === gameId) {
       setSelectedGame(null);
@@ -141,81 +164,107 @@ export default function App() {
         }
       });
     } catch (err: any) {
-      console.warn('Backend delete API unavailable, removed from browser storage:', err);
+      console.warn('Backend delete API unavailable, deleted from Firestore & browser storage:', err);
     }
   };
 
-  // Like game in API
+  // Like game in Firestore & API
   const handleLikeGame = async (gameId: string) => {
     try {
-      await fetch(`/api/games/${gameId}/like`, { method: 'POST' });
-      setGames((prev) =>
-        prev.map((g) => (g.id === gameId ? { ...g, likesCount: g.likesCount + 1 } : g))
-      );
-      if (selectedGame && selectedGame.id === gameId) {
-        setSelectedGame((prev) => prev ? { ...prev, likesCount: prev.likesCount + 1 } : null);
-      }
+      await incrementLikesInFirestore(gameId);
     } catch (err) {
-      console.error('Error liking game:', err);
+      console.error('Firestore like error:', err);
+    }
+
+    try {
+      await fetch(`/api/games/${gameId}/like`, { method: 'POST' });
+    } catch (err) {
+      console.warn('Backend like endpoint unavailable:', err);
+    }
+
+    setGames((prev) =>
+      prev.map((g) => (g.id === gameId ? { ...g, likesCount: g.likesCount + 1 } : g))
+    );
+    if (selectedGame && selectedGame.id === gameId) {
+      setSelectedGame((prev) => (prev ? { ...prev, likesCount: prev.likesCount + 1 } : null));
     }
   };
 
-  // Record Download event
+  // Record Download event in Firestore & API
   const handleRecordDownload = async (gameId: string, buildId: string) => {
     try {
-      await fetch(`/api/games/${gameId}/download/${buildId}`, { method: 'POST' });
-      setGames((prev) =>
-        prev.map((g) =>
-          g.id === gameId
-            ? {
-                ...g,
-                downloadsCount: g.downloadsCount + 1,
-                builds: g.builds.map((b) =>
-                  b.id === buildId ? { ...b, downloadCount: b.downloadCount + 1 } : b
-                )
-              }
-            : g
-        )
-      );
-      if (selectedGame && selectedGame.id === gameId) {
-        setSelectedGame((prev) =>
-          prev
-            ? {
-                ...prev,
-                downloadsCount: prev.downloadsCount + 1,
-                builds: prev.builds.map((b) =>
-                  b.id === buildId ? { ...b, downloadCount: b.downloadCount + 1 } : b
-                )
-              }
-            : null
-        );
-      }
+      await incrementDownloadsInFirestore(gameId);
     } catch (err) {
-      console.error('Error recording download:', err);
+      console.error('Firestore download count increment error:', err);
+    }
+
+    try {
+      await fetch(`/api/games/${gameId}/download/${buildId}`, { method: 'POST' });
+    } catch (err) {
+      console.warn('Backend download endpoint unavailable:', err);
+    }
+
+    setGames((prev) =>
+      prev.map((g) =>
+        g.id === gameId
+          ? {
+              ...g,
+              downloadsCount: g.downloadsCount + 1,
+              builds: g.builds.map((b) =>
+                b.id === buildId ? { ...b, downloadCount: b.downloadCount + 1 } : b
+              )
+            }
+          : g
+      )
+    );
+    if (selectedGame && selectedGame.id === gameId) {
+      setSelectedGame((prev) =>
+        prev
+          ? {
+              ...prev,
+              downloadsCount: prev.downloadsCount + 1,
+              builds: prev.builds.map((b) =>
+                b.id === buildId ? { ...b, downloadCount: b.downloadCount + 1 } : b
+              )
+            }
+          : null
+      );
     }
   };
 
-  // Add Community Review
+  // Add Community Review in Firestore & API
   const handleAddReview = async (gameId: string, author: string, rating: number, comment: string) => {
+    const newReview: ReviewItem = {
+      id: `rev-${Date.now()}`,
+      author,
+      rating,
+      date: new Date().toISOString().split('T')[0],
+      comment
+    };
+
     try {
-      const res = await fetch(`/api/games/${gameId}/reviews`, {
+      await addReviewToFirestore(gameId, newReview);
+    } catch (err) {
+      console.error('Firestore review error:', err);
+    }
+
+    try {
+      await fetch(`/api/games/${gameId}/reviews`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ author, rating, comment })
       });
-      const data = await res.json();
-      if (res.ok && data.review) {
-        setGames((prev) =>
-          prev.map((g) => (g.id === gameId ? { ...g, reviews: [data.review, ...(g.reviews || [])] } : g))
-        );
-        if (selectedGame && selectedGame.id === gameId) {
-          setSelectedGame((prev) =>
-            prev ? { ...prev, reviews: [data.review, ...(prev.reviews || [])] } : null
-          );
-        }
-      }
     } catch (err) {
-      console.error('Error adding review:', err);
+      console.warn('Backend review API unavailable:', err);
+    }
+
+    setGames((prev) =>
+      prev.map((g) => (g.id === gameId ? { ...g, reviews: [newReview, ...(g.reviews || [])] } : g))
+    );
+    if (selectedGame && selectedGame.id === gameId) {
+      setSelectedGame((prev) =>
+        prev ? { ...prev, reviews: [newReview, ...(prev.reviews || [])] } : null
+      );
     }
   };
 
