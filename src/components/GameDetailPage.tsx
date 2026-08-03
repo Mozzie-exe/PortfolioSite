@@ -47,13 +47,18 @@ export const GameDetailPage: React.FC<GameDetailPageProps> = ({
     setDownloadingBuildId(build.id);
     onRecordDownload(game.id, build.id);
 
-    // Trigger file download
+    // Trigger file download via anchor click
     setTimeout(() => {
       setDownloadingBuildId(null);
       setDownloadSuccessMessage(`Downloading ${build.title} (${build.fileName}). Check your browser downloads!`);
       
-      // Open download link
-      window.location.href = build.fileUrl;
+      const link = document.createElement('a');
+      link.href = build.fileUrl;
+      link.download = build.fileName || `${game.title.replace(/\s+/g, '_')}_${build.platform}.zip`;
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
 
       setTimeout(() => setDownloadSuccessMessage(null), 6000);
     }, 600);

@@ -151,25 +151,27 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
     });
   };
 
+  // Helper to read any file (like .zip, .exe, .apk) as Data URL
+  const readFileAsDataUrl = (file: File): Promise<string> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve((reader.result as string) || '');
+      reader.onerror = () => resolve('');
+      reader.readAsDataURL(file);
+    });
+  };
+
   // Compress image helper using HTML5 canvas to keep Base64 size lightweight (<150KB)
   const compressAndResizeImage = (file: File, maxWidth = 1280, maxHeight = 720, quality = 0.75): Promise<string> => {
     return new Promise((resolve) => {
+      if (!file.type.startsWith('image/')) {
+        return readFileAsDataUrl(file).then(resolve);
+      }
+
       // Safety timeout: if image parsing hangs for 5 seconds, resolve with raw data URL
       const timeoutId = setTimeout(() => {
-        const fallbackReader = new FileReader();
-        fallbackReader.onload = () => resolve((fallbackReader.result as string) || '');
-        fallbackReader.onerror = () => resolve('');
-        fallbackReader.readAsDataURL(file);
+        readFileAsDataUrl(file).then(resolve);
       }, 5000);
-
-      if (!file.type.startsWith('image/')) {
-        clearTimeout(timeoutId);
-        const reader = new FileReader();
-        reader.onload = () => resolve((reader.result as string) || '');
-        reader.onerror = () => resolve('');
-        reader.readAsDataURL(file);
-        return;
-      }
 
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -236,7 +238,7 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
     if (!file) return;
 
     setUploading(true);
-    setUploadProgressMsg(`Processing ${file.name}...`);
+    setUploadProgressMsg(`Uploading ${file.name} (${(file.size / (1024 * 1024)).toFixed(1)} MB)... Please wait.`);
 
     let uploadedUrl: string | null = null;
     let uploadedFileName = file.name;
@@ -244,7 +246,8 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
 
     try {
       const controller = new AbortController();
-      const fetchTimeoutId = setTimeout(() => controller.abort(), 5000);
+      // 10 minute timeout for large game builds up to 500MB
+      const fetchTimeoutId = setTimeout(() => controller.abort(), 10 * 60 * 1000);
 
       const uploadFormData = new FormData();
       uploadFormData.append('file', file);
@@ -270,22 +273,28 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
           if (data.fileName) uploadedFileName = data.fileName;
           if (data.fileSize) uploadedFileSize = data.fileSize;
         }
+      } else {
+        console.warn('Server upload endpoint returned non-OK or non-JSON:', res.status);
       }
     } catch (err) {
       console.warn('Backend API upload unavailable or timed out, using client-side file reader:', err);
     }
 
-    // If server upload not available or returned non-JSON/404, convert to compressed Data URL
+    // Client-side fallback if server API is unavailable or offline
     if (!uploadedUrl) {
       try {
-        uploadedUrl = await compressAndResizeImage(file);
+        if (targetField === 'build' || !file.type.startsWith('image/')) {
+          uploadedUrl = await readFileAsDataUrl(file);
+        } else {
+          uploadedUrl = await compressAndResizeImage(file);
+        }
       } catch (err) {
-        console.error('Error processing image:', err);
+        console.error('Client file reading error:', err);
       }
     }
 
     if (!uploadedUrl) {
-      alert(`Could not process "${file.name}". Please select a valid image file.`);
+      alert(`Could not process "${file.name}". Please select a valid file.`);
       setUploading(false);
       setUploadProgressMsg('');
       inputEl.value = '';
@@ -303,6 +312,9 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
       setNewBuildFileUrl(uploadedUrl!);
       setNewBuildFileName(uploadedFileName);
       setNewBuildFileSize(uploadedFileSize);
+      if (!newBuildTitle || newBuildTitle.startsWith('Win64')) {
+        setNewBuildTitle(file.name.replace(/\.[^/.]+$/, ''));
+      }
     }
 
     setUploadProgressMsg(`"${file.name}" attached successfully!`);
@@ -827,7 +839,7 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                         <span>Upload .zip/.apk</span>
                         <input
                           type="file"
-                          accept=".zip,.rar,.7z,.apk,.exe,.AppImage"
+                          accept=".zip,.rar,.7z,.apk,.exe,.app,.AppImage,.tar,.gz,*/*"
                           onChange={(e) => handleFileUpload(e, 'build')}
                           className="hidden"
                         />
