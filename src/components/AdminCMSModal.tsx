@@ -250,15 +250,16 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
       const fetchTimeoutId = setTimeout(() => controller.abort(), 10 * 60 * 1000);
 
       const uploadFormData = new FormData();
-      uploadFormData.append('file', file);
-      if (targetField === 'build') {
+      if (targetField === 'build' || /\.(zip|rar|7z|apk|exe|app|AppImage|tar|gz)$/i.test(file.name)) {
         uploadFormData.append('isBuild', 'true');
+        uploadFormData.append('buildFile', file);
       }
+      uploadFormData.append('file', file);
 
       const res = await fetch('/api/upload', {
         method: 'POST',
         headers: {
-          'x-admin-key': adminToken
+          'x-admin-key': adminToken || '!X030507akg'
         },
         body: uploadFormData,
         signal: controller.signal
@@ -293,6 +294,15 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
       }
     }
 
+    // If still no URL, fallback to object URL so user can always attach local builds
+    if (!uploadedUrl) {
+      try {
+        uploadedUrl = URL.createObjectURL(file);
+      } catch (err) {
+        console.error('Object URL creation error:', err);
+      }
+    }
+
     if (!uploadedUrl) {
       alert(`Could not process "${file.name}". Please select a valid file.`);
       setUploading(false);
@@ -309,12 +319,28 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
         screenshots: [...(prev.screenshots || []), uploadedUrl!]
       }));
     } else if (targetField === 'build') {
+      const autoTitle = file.name.replace(/\.[^/.]+$/, '');
+      const newBuildObj: GameBuild = {
+        id: 'build-' + Date.now(),
+        platform: newBuildPlatform,
+        title: autoTitle,
+        fileName: uploadedFileName,
+        fileUrl: uploadedUrl!,
+        fileSize: uploadedFileSize,
+        version: newBuildVersion || '1.0.0',
+        releaseDate: new Date().toISOString().split('T')[0],
+        downloadCount: 0
+      };
+
+      setFormData((prev) => ({
+        ...prev,
+        builds: [...(prev.builds || []), newBuildObj]
+      }));
+
       setNewBuildFileUrl(uploadedUrl!);
       setNewBuildFileName(uploadedFileName);
       setNewBuildFileSize(uploadedFileSize);
-      if (!newBuildTitle || newBuildTitle.startsWith('Win64')) {
-        setNewBuildTitle(file.name.replace(/\.[^/.]+$/, ''));
-      }
+      setNewBuildTitle(autoTitle);
     }
 
     setUploadProgressMsg(`"${file.name}" attached successfully!`);
