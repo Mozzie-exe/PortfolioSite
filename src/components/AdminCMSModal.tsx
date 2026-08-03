@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { GameProject, GameBuild, PlatformType, GameStatus } from '../types';
 import { 
   X, Plus, Upload, Trash2, Edit3, Save, Sparkles, Check, 
-  FileArchive, Monitor, Video, Image, Terminal, ShieldAlert, KeyRound, Lock 
+  FileArchive, Monitor, Video, Image as ImageIcon, Terminal, ShieldAlert, KeyRound, Lock 
 } from 'lucide-react';
 
 interface AdminCMSModalProps {
@@ -179,7 +179,7 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
           return resolve('');
         }
 
-        const img = new Image();
+        const img = new window.Image();
         img.onload = () => {
           clearTimeout(timeoutId);
           try {
@@ -635,7 +635,7 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                 {/* MEDIA, COVER IMAGE & IN-GAME SCREENSHOTS */}
                 <div className="p-4 rounded-xl bg-white/[0.02] border border-white/10 space-y-4">
                   <h4 className="text-[10px] font-mono font-bold uppercase tracking-widest text-purple-400 flex items-center gap-2">
-                    <Image className="w-4 h-4" /> Cover Image & Media Assets
+                    <ImageIcon className="w-4 h-4" /> Cover Image & Media Assets
                   </h4>
 
                   <div>

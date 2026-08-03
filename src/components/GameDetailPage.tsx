@@ -24,6 +24,14 @@ export const GameDetailPage: React.FC<GameDetailPageProps> = ({
   const [selectedScreenshot, setSelectedScreenshot] = useState<string>(
     game.screenshots && game.screenshots.length > 0 ? game.screenshots[0] : game.coverImage
   );
+
+  React.useEffect(() => {
+    if (game.screenshots && game.screenshots.length > 0) {
+      setSelectedScreenshot(game.screenshots[0]);
+    } else {
+      setSelectedScreenshot(game.coverImage);
+    }
+  }, [game.id, game.screenshots, game.coverImage]);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [downloadingBuildId, setDownloadingBuildId] = useState<string | null>(null);
   const [downloadSuccessMessage, setDownloadSuccessMessage] = useState<string | null>(null);
@@ -201,7 +209,7 @@ export const GameDetailPage: React.FC<GameDetailPageProps> = ({
 
             {/* Thumbnails Row */}
             <div className="grid grid-cols-4 gap-3">
-              {game.screenshots.map((imgUrl, idx) => (
+              {(game.screenshots || []).map((imgUrl, idx) => (
                 <button
                   key={idx}
                   onClick={() => setSelectedScreenshot(imgUrl)}

@@ -3,8 +3,8 @@ import path from 'path';
 import fs from 'fs';
 import multer from 'multer';
 import { createServer as createViteServer } from 'vite';
-import { INITIAL_GAMES } from './src/data/initialGames';
-import { GameProject } from './src/types';
+import { INITIAL_GAMES } from './src/data/initialGames.js';
+import type { GameProject } from './src/types.js';
 
 const app = express();
 const PORT = 3000;
