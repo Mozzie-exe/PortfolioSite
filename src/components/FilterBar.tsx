@@ -27,7 +27,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             placeholder="Search game title, C# features, or render pipeline..."
             value={filters.searchQuery}
             onChange={(e) => onFilterChange({ searchQuery: e.target.value })}
-            className="w-full pl-10 pr-4 py-2.5 bg-[#020204]/80 border border-white/10 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500/80 focus:ring-1 focus:ring-cyan-500/80 transition-all font-mono"
+            className="w-full pl-10 pr-4 py-2.5 bg-[#020204]/80 border border-white/10 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-500/80 focus:ring-1 focus:ring-purple-500/80 transition-all font-mono"
           />
           {filters.searchQuery && (
             <button
@@ -46,7 +46,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
           <select
             value={filters.selectedGenre}
             onChange={(e) => onFilterChange({ selectedGenre: e.target.value })}
-            className="px-3.5 py-2.5 bg-[#020204] border border-white/10 rounded-xl text-xs font-mono text-slate-200 focus:outline-none focus:border-cyan-500/80 cursor-pointer"
+            className="px-3.5 py-2.5 bg-[#020204] border border-white/10 rounded-xl text-xs font-mono text-slate-200 focus:outline-none focus:border-purple-500/80 cursor-pointer"
           >
             <option value="ALL">All Genres</option>
             {availableGenres.map((g) => (
@@ -58,7 +58,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
           <select
             value={filters.selectedPlatform}
             onChange={(e) => onFilterChange({ selectedPlatform: e.target.value })}
-            className="px-3.5 py-2.5 bg-[#020204] border border-white/10 rounded-xl text-xs font-mono text-slate-200 focus:outline-none focus:border-cyan-500/80 cursor-pointer"
+            className="px-3.5 py-2.5 bg-[#020204] border border-white/10 rounded-xl text-xs font-mono text-slate-200 focus:outline-none focus:border-purple-500/80 cursor-pointer"
           >
             <option value="ALL">All Platforms</option>
             <option value="windows">Windows (.exe)</option>
@@ -72,7 +72,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
           <select
             value={filters.selectedStatus}
             onChange={(e) => onFilterChange({ selectedStatus: e.target.value })}
-            className="px-3.5 py-2.5 bg-[#020204] border border-white/10 rounded-xl text-xs font-mono text-slate-200 focus:outline-none focus:border-cyan-500/80 cursor-pointer"
+            className="px-3.5 py-2.5 bg-[#020204] border border-white/10 rounded-xl text-xs font-mono text-slate-200 focus:outline-none focus:border-purple-500/80 cursor-pointer"
           >
             <option value="ALL">All Statuses</option>
             <option value="Released">Released</option>
@@ -85,7 +85,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
           <select
             value={filters.sortBy}
             onChange={(e) => onFilterChange({ sortBy: e.target.value as any })}
-            className="px-3.5 py-2.5 bg-[#020204] border border-white/10 rounded-xl text-xs font-mono text-slate-200 focus:outline-none focus:border-cyan-500/80 cursor-pointer"
+            className="px-3.5 py-2.5 bg-[#020204] border border-white/10 rounded-xl text-xs font-mono text-slate-200 focus:outline-none focus:border-purple-500/80 cursor-pointer"
           >
             <option value="featured">Featured First</option>
             <option value="newest">Newest Releases</option>
@@ -100,7 +100,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
               className="p-2.5 bg-white/[0.05] hover:bg-white/[0.1] text-slate-300 border border-white/10 rounded-xl text-xs font-mono transition-colors flex items-center gap-1.5 cursor-pointer"
               title="Reset Filters"
             >
-              <RotateCcw className="w-3.5 h-3.5 text-cyan-400" />
+              <RotateCcw className="w-3.5 h-3.5 text-purple-400" />
               <span>Reset</span>
             </button>
           )}

@@ -69,15 +69,15 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ onClose, onSuc
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#020204]/90 backdrop-blur-xl animate-fadeIn">
-      <div className="relative w-full max-w-md bg-[#020204] border border-cyan-500/30 rounded-2xl shadow-[0_0_50px_rgba(6,182,212,0.2)] overflow-hidden">
+      <div className="relative w-full max-w-md bg-[#020204] border border-purple-500/30 rounded-2xl shadow-[0_0_50px_rgba(168,85,247,0.25)] overflow-hidden">
         
         {/* Glow accent */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-500"></div>
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 via-violet-500 to-indigo-500"></div>
 
         {/* Header */}
         <div className="p-6 bg-white/[0.02] border-b border-white/10 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
+            <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-400">
               <ShieldCheck className="w-6 h-6" />
             </div>
             <div>
@@ -97,10 +97,10 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ onClose, onSuc
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 text-xs text-slate-300 leading-relaxed">
             <p className="font-semibold text-slate-200 mb-1 flex items-center gap-1.5">
-              <Lock className="w-4 h-4 text-cyan-400" />
+              <Lock className="w-4 h-4 text-purple-400" />
               Restricted Studio Management
             </p>
-            Only <strong className="text-cyan-300 font-mono">Kerem Guvenli (Admin)</strong> can upload game builds, add projects, or modify portfolio content. Clients have read-only & download access.
+            Only <strong className="text-purple-300 font-mono">Kerem Guvenli (Admin)</strong> can upload game builds, add projects, or modify portfolio content. Clients have read-only & download access.
           </div>
 
           {errorMsg && (
@@ -123,7 +123,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ onClose, onSuc
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter admin passcode..."
-                className="w-full pl-10 pr-10 py-3 rounded-xl bg-white/[0.04] border border-white/10 focus:border-cyan-500 focus:bg-white/[0.08] text-white text-sm focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-all"
+                className="w-full pl-10 pr-10 py-3 rounded-xl bg-white/[0.04] border border-white/10 focus:border-purple-500 focus:bg-white/[0.08] text-white text-sm focus:outline-none focus:ring-1 focus:ring-purple-500 transition-all"
                 autoFocus
                 required
               />
@@ -148,7 +148,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ onClose, onSuc
             <button
               type="submit"
               disabled={loading || !password.trim()}
-              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-mono text-xs font-black uppercase tracking-wider shadow-[0_0_20px_rgba(6,182,212,0.4)] hover:shadow-[0_0_25px_rgba(6,182,212,0.6)] transition-all flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-500 to-violet-600 hover:from-purple-400 hover:to-violet-500 text-slate-950 font-mono text-xs font-black uppercase tracking-wider shadow-[0_0_20px_rgba(168,85,247,0.4)] hover:shadow-[0_0_25px_rgba(168,85,247,0.6)] transition-all flex items-center gap-2 disabled:opacity-50 cursor-pointer"
             >
               {loading ? (
                 <span>Verifying...</span>

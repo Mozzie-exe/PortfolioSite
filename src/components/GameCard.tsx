@@ -27,7 +27,7 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onSelectGame }) => {
   return (
     <div 
       onClick={() => onSelectGame(game)}
-      className="group relative bg-white/[0.02] border border-white/10 hover:border-cyan-500/40 rounded-2xl overflow-hidden shadow-xl hover:shadow-[0_0_30px_rgba(6,182,212,0.15)] transition-all duration-300 flex flex-col cursor-pointer transform hover:-translate-y-1 backdrop-blur-md"
+      className="group relative bg-white/[0.02] border border-white/10 hover:border-purple-500/40 rounded-2xl overflow-hidden shadow-xl hover:shadow-[0_0_30px_rgba(168,85,247,0.2)] transition-all duration-300 flex flex-col cursor-pointer transform hover:-translate-y-1 backdrop-blur-md"
     >
       {/* Thumbnail Header */}
       <div className="relative aspect-[16/9] w-full overflow-hidden bg-black/60">
@@ -53,14 +53,14 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onSelectGame }) => {
 
         {/* Unity Render Pipeline Badge */}
         <div className="absolute top-3 right-3 flex items-center gap-1.5">
-          <span className="px-2 py-0.5 rounded text-[10px] font-mono tracking-wider bg-[#020204]/80 text-cyan-300 border border-white/10 backdrop-blur-md">
+          <span className="px-2 py-0.5 rounded text-[10px] font-mono tracking-wider bg-[#020204]/80 text-purple-300 border border-white/10 backdrop-blur-md">
             {game.renderPipeline}
           </span>
         </div>
 
         {/* Hover Action Teaser */}
         <div className="absolute inset-0 bg-[#020204]/70 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-          <span className="px-4 py-2 rounded-xl bg-cyan-500 text-slate-950 font-extrabold text-[11px] tracking-wider uppercase flex items-center gap-2 shadow-[0_0_15px_rgba(6,182,212,0.4)]">
+          <span className="px-4 py-2 rounded-xl bg-purple-500 text-slate-950 font-extrabold text-[11px] tracking-wider uppercase flex items-center gap-2 shadow-[0_0_15px_rgba(168,85,247,0.45)]">
             View Details & Builds <ArrowRight className="w-3.5 h-3.5" />
           </span>
         </div>
@@ -72,7 +72,7 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onSelectGame }) => {
           
           {/* Title & Unity Version */}
           <div className="flex items-start justify-between gap-2 mb-2">
-            <h3 className="text-base font-extrabold text-white uppercase tracking-wider group-hover:text-cyan-400 transition-colors line-clamp-1">
+            <h3 className="text-base font-extrabold text-white uppercase tracking-wider group-hover:text-purple-400 transition-colors line-clamp-1">
               {game.title}
             </h3>
           </div>
@@ -110,7 +110,7 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onSelectGame }) => {
               {averageRating}
             </span>
             <span className="flex items-center gap-1 text-slate-300 text-xs">
-              <Download className="w-3 h-3 text-cyan-400" />
+              <Download className="w-3 h-3 text-purple-400" />
               {game.downloadsCount.toLocaleString()}
             </span>
           </div>

@@ -13,7 +13,7 @@ export const AboutDevModal: React.FC<AboutDevModalProps> = ({ onClose }) => {
         {/* Header */}
         <div className="p-5 bg-white/[0.02] border-b border-white/10 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
+            <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-400">
               <Gamepad2 className="w-5 h-5" />
             </div>
             <div>
@@ -35,7 +35,7 @@ export const AboutDevModal: React.FC<AboutDevModalProps> = ({ onClose }) => {
           {/* Bio Summary */}
           <div className="p-4 rounded-xl bg-white/[0.02] border border-white/10 font-light">
             <h3 className="text-xs font-mono uppercase tracking-wider font-bold text-white mb-2 flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-cyan-400" /> Professional Summary
+              <Sparkles className="w-4 h-4 text-purple-400" /> Professional Summary
             </h3>
             <p className="leading-relaxed text-slate-300">
               Experienced Unity Game Developer specializing in real-time 3D physics engines, HLSL custom shaders, High-Definition Render Pipeline (HDRP/URP), and low-level C# performance optimization using Unity DOTS, Burst Compiler, and Job Systems.
@@ -44,7 +44,7 @@ export const AboutDevModal: React.FC<AboutDevModalProps> = ({ onClose }) => {
 
           {/* Tech Matrix */}
           <div>
-            <h3 className="text-xs font-mono uppercase tracking-widest text-cyan-400 mb-3 flex items-center gap-2">
+            <h3 className="text-xs font-mono uppercase tracking-widest text-purple-400 mb-3 flex items-center gap-2">
               <Cpu className="w-4 h-4" /> Technical Proficiency & Tooling
             </h3>
             <div className="grid grid-cols-2 gap-2.5">
@@ -69,7 +69,7 @@ export const AboutDevModal: React.FC<AboutDevModalProps> = ({ onClose }) => {
             <span className="flex items-center gap-1.5">
               <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Windows, macOS, Linux & WebGL Targets
             </span>
-            <span className="text-cyan-400 font-bold">kerem@mozzie.studio</span>
+            <span className="text-purple-400 font-bold">kerem@mozzie.studio</span>
           </div>
 
         </div>

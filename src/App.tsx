@@ -37,7 +37,11 @@ export default function App() {
 
   // Sync games to localStorage whenever games state changes as a fast cache fallback
   useEffect(() => {
-    localStorage.setItem('mozzie_portfolio_games', JSON.stringify(games));
+    try {
+      localStorage.setItem('mozzie_portfolio_games', JSON.stringify(games));
+    } catch (e) {
+      console.warn('LocalStorage quota or write error:', e);
+    }
   }, [games]);
 
   // Realtime Firestore Subscription for global persistence across all IPs & devices
@@ -419,10 +423,10 @@ export default function App() {
                 ))}
               </div>
             ) : games.length === 0 ? (
-              <div className="p-12 text-center rounded-2xl bg-slate-900 border border-slate-800 my-8">
-                <Gamepad2 className="w-12 h-12 text-cyan-500/50 mx-auto mb-3" />
+              <div className="p-12 text-center rounded-2xl bg-[#020204] border border-white/10 my-8">
+                <Gamepad2 className="w-12 h-12 text-purple-500/50 mx-auto mb-3" />
                 <h3 className="text-base font-bold text-white mb-1">No Projects Published Yet</h3>
-                <p className="text-xs text-slate-400 mb-4">Use the Admin CMS panel to add your Unity projects, screenshots, builds, and devlogs.</p>
+                <p className="text-xs text-slate-400 mb-4 font-light">Use the Admin CMS panel to add your Unity projects, screenshots, builds, and devlogs.</p>
                 <button
                   onClick={() => {
                     if (isAdminLoggedIn) {
@@ -431,16 +435,16 @@ export default function App() {
                       setAdminLoginOpen(true);
                     }
                   }}
-                  className="px-5 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 rounded-xl text-xs font-bold transition-all shadow-lg shadow-cyan-500/20"
+                  className="px-5 py-2.5 bg-gradient-to-r from-purple-500 to-violet-600 hover:from-purple-400 hover:to-violet-500 text-slate-950 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all shadow-[0_0_20px_rgba(168,85,247,0.35)] cursor-pointer"
                 >
                   Open Admin CMS
                 </button>
               </div>
             ) : (
-              <div className="p-12 text-center rounded-2xl bg-slate-900 border border-slate-800 my-8">
+              <div className="p-12 text-center rounded-2xl bg-[#020204] border border-white/10 my-8">
                 <AlertCircle className="w-12 h-12 text-slate-600 mx-auto mb-3" />
                 <h3 className="text-base font-bold text-white mb-1">No Unity Projects Match Your Filters</h3>
-                <p className="text-xs text-slate-400 mb-4">Try clearing your search query or adjusting genre/platform filters.</p>
+                <p className="text-xs text-slate-400 mb-4 font-light">Try clearing your search query or adjusting genre/platform filters.</p>
                 <button
                   onClick={() =>
                     setFilters({
@@ -452,7 +456,7 @@ export default function App() {
                       sortBy: 'featured'
                     })
                   }
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-cyan-400 rounded-xl text-xs font-bold transition-all"
+                  className="px-4 py-2 bg-white/[0.05] hover:bg-white/[0.1] text-purple-300 border border-white/10 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer"
                 >
                   Reset All Filters
                 </button>
@@ -464,13 +468,13 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-900 bg-slate-950 py-8 text-xs text-slate-500 text-center">
+      <footer className="border-t border-white/10 bg-[#020204] py-8 text-xs text-slate-500 text-center">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-slate-400 font-mono text-[11px]">
-            <Gamepad2 className="w-4 h-4 text-cyan-400" />
+            <Gamepad2 className="w-4 h-4 text-purple-400" />
             <span>Mozzie • Kerem Guvenli Game Development Studio</span>
           </div>
-          <p>© {new Date().getFullYear()} Mozzie (Kerem Guvenli). All rights reserved.</p>
+          <p className="font-mono text-[11px]">© {new Date().getFullYear()} Mozzie (Kerem Guvenli). All rights reserved.</p>
         </div>
       </footer>
 

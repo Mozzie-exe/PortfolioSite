@@ -151,17 +151,53 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
     });
   };
 
-  // Helper to convert file to Base64 data URL for static/Vercel client fallback
-  const readFileAsDataUrl = (file: File): Promise<string> => {
+  // Compress image helper using HTML5 canvas to keep Base64 size lightweight (<150KB)
+  const compressAndResizeImage = (file: File, maxWidth = 1280, maxHeight = 720, quality = 0.75): Promise<string> => {
     return new Promise((resolve, reject) => {
+      if (!file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = (err) => reject(err);
+        reader.readAsDataURL(file);
+        return;
+      }
+
       const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          let width = img.width;
+          let height = img.height;
+
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+          if (height > maxHeight) {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            return resolve(e.target?.result as string);
+          }
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+          resolve(compressedDataUrl);
+        };
+        img.onerror = (err) => reject(err);
+        img.src = e.target?.result as string;
+      };
       reader.onerror = (err) => reject(err);
       reader.readAsDataURL(file);
     });
   };
 
-  // Upload file handler with API + Base64 client fallback for Vercel
+  // Upload file handler with API + Compressed client fallback for Vercel
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, targetField: 'cover' | 'screenshot' | 'build') => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -198,13 +234,13 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
         }
       }
     } catch (err) {
-      console.warn('Backend API upload unavailable or static deployment, using client-side file reader:', err);
+      console.warn('Backend API upload unavailable or static deployment, using compressed client file reader:', err);
     }
 
-    // If server upload not available or returned non-JSON/404, convert to Data URL
+    // If server upload not available or returned non-JSON/404, convert to compressed Data URL
     if (!uploadedUrl) {
       try {
-        uploadedUrl = await readFileAsDataUrl(file);
+        uploadedUrl = await compressAndResizeImage(file);
       } catch (err) {
         alert('Could not process selected file.');
         setUploading(false);
@@ -225,7 +261,7 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
       setNewBuildFileSize(uploadedFileSize);
     }
 
-    setUploadProgressMsg('File attached successfully!');
+    setUploadProgressMsg('File attached & compressed successfully!');
     setTimeout(() => setUploadProgressMsg(''), 3000);
     setUploading(false);
   };
@@ -270,11 +306,18 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
     e.preventDefault();
     if (!formData.title || !formData.id) return;
 
-    setSaving(true);
-    await onSaveGame(formData as GameProject, isCreatingNew);
-    setSaving(false);
-    onClose();
+    try {
+      setSaving(true);
+      await onSaveGame(formData as GameProject, isCreatingNew);
+      setSaving(false);
+      onClose();
+    } catch (err: any) {
+      console.error('Error saving game:', err);
+      alert('Failed to save project: ' + (err?.message || 'Please check your inputs and try again.'));
+      setSaving(false);
+    }
   };
+
 
   // Delete Game
   const handleDelete = async (gameId: string) => {
@@ -294,7 +337,7 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
         {/* Modal Header */}
         <div className="p-5 bg-white/[0.02] border-b border-white/10 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
+            <div className="p-2 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-400">
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
@@ -306,10 +349,10 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
             <button
               type="button"
               onClick={() => setShowPasswordChangeModal(true)}
-              className="px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-cyan-300 border border-cyan-500/30 transition-all text-xs font-mono flex items-center gap-1.5 cursor-pointer"
+              className="px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-purple-300 border border-purple-500/30 transition-all text-xs font-mono flex items-center gap-1.5 cursor-pointer"
               title="Change Admin Password"
             >
-              <KeyRound className="w-3.5 h-3.5 text-cyan-400" />
+              <KeyRound className="w-3.5 h-3.5 text-purple-400" />
               <span>Change Passcode</span>
             </button>
             <button
@@ -324,10 +367,10 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
         {/* Admin Password Change Dialog Overlay */}
         {showPasswordChangeModal && (
           <div className="absolute inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-            <div className="w-full max-w-md bg-[#020204] border border-cyan-500/40 rounded-2xl p-6 shadow-2xl relative space-y-4">
+            <div className="w-full max-w-md bg-[#020204] border border-purple-500/40 rounded-2xl p-6 shadow-2xl relative space-y-4">
               <div className="flex items-center justify-between border-b border-white/10 pb-3">
                 <div className="flex items-center gap-2 font-mono text-sm font-bold text-white">
-                  <KeyRound className="w-4 h-4 text-cyan-400" />
+                  <KeyRound className="w-4 h-4 text-purple-400" />
                   <span>Update Admin Passcode</span>
                 </div>
                 <button 
@@ -364,7 +407,7 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                     value={newPasswordInput}
                     onChange={(e) => setNewPasswordInput(e.target.value)}
                     placeholder="Enter new secret password..."
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-white text-sm focus:border-cyan-500 focus:outline-none"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-white text-sm focus:border-purple-500 focus:outline-none"
                     required
                   />
                 </div>
@@ -380,7 +423,7 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                   <button
                     type="submit"
                     disabled={changingPassword || !newPasswordInput.trim()}
-                    className="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-mono font-bold uppercase tracking-wider cursor-pointer"
+                    className="px-4 py-2 rounded-xl bg-purple-500 hover:bg-purple-400 text-slate-950 text-xs font-mono font-bold uppercase tracking-wider cursor-pointer"
                   >
                     {changingPassword ? 'Updating...' : 'Save New Passcode'}
                   </button>
@@ -399,8 +442,8 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
               onClick={handleStartCreateNew}
               className={`w-full py-2.5 px-3 rounded-xl border text-xs font-mono uppercase tracking-wider transition-all flex items-center justify-center gap-2 mb-4 cursor-pointer ${
                 isCreatingNew
-                  ? 'bg-cyan-500 text-slate-950 border-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.4)] font-bold'
-                  : 'bg-white/[0.03] hover:bg-white/[0.08] text-cyan-400 border-white/10'
+                  ? 'bg-purple-500 text-slate-950 border-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.4)] font-bold'
+                  : 'bg-white/[0.03] hover:bg-white/[0.08] text-purple-400 border-white/10'
               }`}
             >
               <Plus className="w-4 h-4" />
@@ -418,7 +461,7 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                   onClick={() => handleSelectGameToEdit(g)}
                   className={`p-2.5 rounded-xl border text-xs transition-all cursor-pointer flex items-center justify-between group ${
                     editingGameId === g.id && !isCreatingNew
-                      ? 'bg-white/[0.06] text-white border-cyan-500/50 shadow-sm'
+                      ? 'bg-white/[0.06] text-white border-purple-500/50 shadow-sm'
                       : 'bg-white/[0.01] hover:bg-white/[0.04] text-slate-300 border-white/5'
                   }`}
                 >
@@ -454,7 +497,7 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                   <button
                     type="submit"
                     disabled={saving || uploading}
-                    className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-mono font-bold text-xs uppercase tracking-wider shadow-[0_0_15px_rgba(6,182,212,0.3)] transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                    className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-500 to-violet-600 hover:from-purple-400 hover:to-violet-500 text-slate-950 font-mono font-bold text-xs uppercase tracking-wider shadow-[0_0_15px_rgba(168,85,247,0.35)] transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
                   >
                     <Save className="w-4 h-4 text-slate-950" />
                     <span>{saving ? 'Saving Project...' : 'Save Game Project'}</span>
@@ -462,8 +505,8 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                 </div>
 
                 {uploadProgressMsg && (
-                  <div className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/40 text-cyan-300 text-xs font-mono flex items-center gap-2">
-                    <div className="w-3.5 h-3.5 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+                  <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/40 text-purple-300 text-xs font-mono flex items-center gap-2">
+                    <div className="w-3.5 h-3.5 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
                     <span>{uploadProgressMsg}</span>
                   </div>
                 )}
@@ -477,7 +520,7 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                       required
                       value={formData.title || ''}
                       onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                      className="w-full px-3 py-2 bg-white/[0.03] border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:border-cyan-500 font-mono"
+                      className="w-full px-3 py-2 bg-white/[0.03] border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:border-purple-500 font-mono"
                     />
                   </div>
 
@@ -489,7 +532,7 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                       placeholder="e.g. Unity 6 (6000.0) or 2022.3 LTS"
                       value={formData.unityVersion || ''}
                       onChange={(e) => setFormData({ ...formData, unityVersion: e.target.value })}
-                      className="w-full px-3 py-2 bg-white/[0.03] border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:border-cyan-500 font-mono"
+                      className="w-full px-3 py-2 bg-white/[0.03] border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:border-purple-500 font-mono"
                     />
                   </div>
 
@@ -498,7 +541,7 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                     <select
                       value={formData.renderPipeline || 'URP'}
                       onChange={(e) => setFormData({ ...formData, renderPipeline: e.target.value as any })}
-                      className="w-full px-3 py-2 bg-[#020204] border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:border-cyan-500 font-mono"
+                      className="w-full px-3 py-2 bg-[#020204] border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:border-purple-500 font-mono"
                     >
                       <option value="URP">Universal Render Pipeline (URP)</option>
                       <option value="HDRP">High Definition Render Pipeline (HDRP)</option>
@@ -512,7 +555,7 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                     <select
                       value={formData.status || 'Released'}
                       onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                      className="w-full px-3 py-2 bg-[#020204] border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:border-cyan-500 font-mono"
+                      className="w-full px-3 py-2 bg-[#020204] border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:border-purple-500 font-mono"
                     >
                       <option value="Released">Released</option>
                       <option value="Playable Demo">Playable Demo</option>
@@ -530,7 +573,7 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                     type="text"
                     value={formData.tagline || ''}
                     onChange={(e) => setFormData({ ...formData, tagline: e.target.value })}
-                    className="w-full px-3 py-2 bg-white/[0.03] border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:border-cyan-500 font-mono"
+                    className="w-full px-3 py-2 bg-white/[0.03] border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:border-purple-500 font-mono"
                   />
                 </div>
 
@@ -540,13 +583,13 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                     rows={4}
                     value={formData.detailedOverview || ''}
                     onChange={(e) => setFormData({ ...formData, detailedOverview: e.target.value })}
-                    className="w-full px-3 py-2 bg-white/[0.03] border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:border-cyan-500 font-mono"
+                    className="w-full px-3 py-2 bg-white/[0.03] border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:border-purple-500 font-mono"
                   />
                 </div>
 
                 {/* MEDIA, COVER IMAGE & IN-GAME SCREENSHOTS */}
                 <div className="p-4 rounded-xl bg-white/[0.02] border border-white/10 space-y-4">
-                  <h4 className="text-[10px] font-mono font-bold uppercase tracking-widest text-cyan-400 flex items-center gap-2">
+                  <h4 className="text-[10px] font-mono font-bold uppercase tracking-widest text-purple-400 flex items-center gap-2">
                     <Image className="w-4 h-4" /> Cover Image & Media Assets
                   </h4>
 
@@ -560,7 +603,7 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                         className="flex-1 px-3 py-2 bg-white/[0.03] border border-white/10 rounded-xl text-xs text-white font-mono"
                       />
                       <label className="px-3 py-2 bg-white/[0.06] hover:bg-white/[0.1] text-white rounded-xl text-xs font-mono cursor-pointer flex items-center gap-1.5 shrink-0 border border-white/10">
-                        <Upload className="w-3.5 h-3.5 text-cyan-400" />
+                        <Upload className="w-3.5 h-3.5 text-purple-400" />
                         <span>Upload File</span>
                         <input
                           type="file"
@@ -578,8 +621,8 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                       <label className="block text-[11px] font-mono font-bold uppercase tracking-wider text-slate-300">
                         In-Game Screenshots ({formData.screenshots?.length || 0})
                       </label>
-                      <label className="px-3 py-1.5 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 rounded-xl text-xs font-mono cursor-pointer flex items-center gap-1.5 transition-colors">
-                        <Upload className="w-3.5 h-3.5 text-cyan-400" />
+                      <label className="px-3 py-1.5 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-xl text-xs font-mono cursor-pointer flex items-center gap-1.5 transition-colors">
+                        <Upload className="w-3.5 h-3.5 text-purple-400" />
                         <span>Add Screenshot File</span>
                         <input
                           type="file"
@@ -662,7 +705,7 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
 
                 {/* UPLOADABLE BUILD FILES MANAGEMENT */}
                 <div className="p-4 rounded-xl bg-white/[0.02] border border-white/10 space-y-4">
-                  <h4 className="text-[10px] font-mono font-bold uppercase tracking-widest text-cyan-400 flex items-center gap-2">
+                  <h4 className="text-[10px] font-mono font-bold uppercase tracking-widest text-purple-400 flex items-center gap-2">
                     <FileArchive className="w-4 h-4" /> Downloadable Game Build Manager (.zip, .apk, .exe)
                   </h4>
 
@@ -672,7 +715,7 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                       formData.builds.map((b) => (
                         <div key={b.id} className="p-3 rounded-xl bg-[#020204] border border-white/10 flex items-center justify-between text-xs font-mono">
                           <div>
-                            <span className="font-bold text-cyan-400 uppercase mr-2">[{b.platform}]</span>
+                            <span className="font-bold text-purple-400 uppercase mr-2">[{b.platform}]</span>
                             <span className="text-slate-200 font-semibold">{b.title}</span>
                             <span className="text-slate-400 text-[10px] ml-2">({b.fileSize} • {b.fileName})</span>
                           </div>
@@ -734,7 +777,7 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                         className="flex-1 px-3 py-2 bg-white/[0.03] border border-white/10 rounded-xl text-xs text-white font-mono"
                       />
 
-                      <label className="px-3 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 rounded-xl text-xs font-mono font-extrabold cursor-pointer flex items-center gap-1 shrink-0 uppercase tracking-wider">
+                      <label className="px-3 py-2 bg-purple-500 hover:bg-purple-400 text-slate-950 rounded-xl text-xs font-mono font-extrabold cursor-pointer flex items-center gap-1 shrink-0 uppercase tracking-wider shadow-[0_0_10px_rgba(168,85,247,0.3)]">
                         <Upload className="w-3.5 h-3.5 text-slate-950" />
                         <span>Upload .zip/.apk</span>
                         <input
@@ -749,9 +792,9 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                     <button
                       type="button"
                       onClick={handleAddBuild}
-                      className="w-full py-2.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-cyan-300 border border-white/10 font-mono font-bold text-xs uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                      className="w-full py-2.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-purple-300 border border-white/10 font-mono font-bold text-xs uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                     >
-                      <Plus className="w-3.5 h-3.5" />
+                      <Plus className="w-3.5 h-3.5 text-purple-400" />
                       <span>Attach Build File to Project</span>
                     </button>
                   </div>
