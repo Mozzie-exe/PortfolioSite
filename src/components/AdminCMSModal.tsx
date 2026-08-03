@@ -153,53 +153,86 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
 
   // Compress image helper using HTML5 canvas to keep Base64 size lightweight (<150KB)
   const compressAndResizeImage = (file: File, maxWidth = 1280, maxHeight = 720, quality = 0.75): Promise<string> => {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
+      // Safety timeout: if image parsing hangs for 5 seconds, resolve with raw data URL
+      const timeoutId = setTimeout(() => {
+        const fallbackReader = new FileReader();
+        fallbackReader.onload = () => resolve((fallbackReader.result as string) || '');
+        fallbackReader.onerror = () => resolve('');
+        fallbackReader.readAsDataURL(file);
+      }, 5000);
+
       if (!file.type.startsWith('image/')) {
+        clearTimeout(timeoutId);
         const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = (err) => reject(err);
+        reader.onload = () => resolve((reader.result as string) || '');
+        reader.onerror = () => resolve('');
         reader.readAsDataURL(file);
         return;
       }
 
       const reader = new FileReader();
       reader.onload = (e) => {
+        const rawDataUrl = e.target?.result as string;
+        if (!rawDataUrl) {
+          clearTimeout(timeoutId);
+          return resolve('');
+        }
+
         const img = new Image();
         img.onload = () => {
-          let width = img.width;
-          let height = img.height;
+          clearTimeout(timeoutId);
+          try {
+            let width = img.width;
+            let height = img.height;
 
-          if (width > maxWidth) {
-            height = Math.round((height * maxWidth) / width);
-            width = maxWidth;
-          }
-          if (height > maxHeight) {
-            width = Math.round((width * maxHeight) / height);
-            height = maxHeight;
-          }
+            if (width > maxWidth) {
+              height = Math.round((height * maxWidth) / width);
+              width = maxWidth;
+            }
+            if (height > maxHeight) {
+              width = Math.round((width * maxHeight) / height);
+              height = maxHeight;
+            }
 
-          const canvas = document.createElement('canvas');
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          if (!ctx) {
-            return resolve(e.target?.result as string);
+            const canvas = document.createElement('canvas');
+            canvas.width = width || 800;
+            canvas.height = height || 600;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+              return resolve(rawDataUrl);
+            }
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+            resolve(compressedDataUrl || rawDataUrl);
+          } catch (err) {
+            console.warn('Canvas image compression failed, falling back to raw data URL:', err);
+            resolve(rawDataUrl);
           }
-          ctx.drawImage(img, 0, 0, width, height);
-          const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
-          resolve(compressedDataUrl);
         };
-        img.onerror = (err) => reject(err);
-        img.src = e.target?.result as string;
+
+        img.onerror = (err) => {
+          clearTimeout(timeoutId);
+          console.warn('Image load error during compression, using raw reader result:', err);
+          resolve(rawDataUrl);
+        };
+
+        img.src = rawDataUrl;
       };
-      reader.onerror = (err) => reject(err);
+
+      reader.onerror = () => {
+        clearTimeout(timeoutId);
+        resolve('');
+      };
+
       reader.readAsDataURL(file);
     });
   };
 
-  // Upload file handler with API + Compressed client fallback for Vercel
+  // Upload file handler with API + Compressed client fallback
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, targetField: 'cover' | 'screenshot' | 'build') => {
-    const file = e.target.files?.[0];
+    const inputEl = e.target;
+    const file = inputEl.files?.[0];
     if (!file) return;
 
     setUploading(true);
@@ -210,6 +243,9 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
     let uploadedFileSize = `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
 
     try {
+      const controller = new AbortController();
+      const fetchTimeoutId = setTimeout(() => controller.abort(), 5000);
+
       const uploadFormData = new FormData();
       uploadFormData.append('file', file);
       if (targetField === 'build') {
@@ -221,8 +257,10 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
         headers: {
           'x-admin-key': adminToken
         },
-        body: uploadFormData
+        body: uploadFormData,
+        signal: controller.signal
       });
+      clearTimeout(fetchTimeoutId);
 
       const contentType = res.headers.get('content-type');
       if (res.ok && contentType && contentType.includes('application/json')) {
@@ -234,7 +272,7 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
         }
       }
     } catch (err) {
-      console.warn('Backend API upload unavailable or static deployment, using compressed client file reader:', err);
+      console.warn('Backend API upload unavailable or timed out, using client-side file reader:', err);
     }
 
     // If server upload not available or returned non-JSON/404, convert to compressed Data URL
@@ -242,10 +280,16 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
       try {
         uploadedUrl = await compressAndResizeImage(file);
       } catch (err) {
-        alert('Could not process selected file.');
-        setUploading(false);
-        return;
+        console.error('Error processing image:', err);
       }
+    }
+
+    if (!uploadedUrl) {
+      alert(`Could not process "${file.name}". Please select a valid image file.`);
+      setUploading(false);
+      setUploadProgressMsg('');
+      inputEl.value = '';
+      return;
     }
 
     if (targetField === 'cover') {
@@ -261,9 +305,10 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
       setNewBuildFileSize(uploadedFileSize);
     }
 
-    setUploadProgressMsg('File attached & compressed successfully!');
+    setUploadProgressMsg(`"${file.name}" attached successfully!`);
     setTimeout(() => setUploadProgressMsg(''), 3000);
     setUploading(false);
+    inputEl.value = '';
   };
 
   // Add Build to list
