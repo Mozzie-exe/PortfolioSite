@@ -324,29 +324,67 @@ app.post('/api/games/:id/reviews', (req, res) => {
   res.json({ success: true, review: newReview, reviews: game.reviews });
 });
 
-// 9. Upload File Endpoint (Builds, Cover Images, Screenshots, Videos) - Admin Only
-app.post('/api/upload', requireAdminAuth, upload.any(), (req, res) => {
-  const file = (req.files as Express.Multer.File[])?.[0] || (req as any).file;
-  if (!file) {
-    return res.status(400).json({ error: 'No file uploaded' });
+// 9. Download File Endpoint for Server Build Files
+app.get('/api/download', (req, res) => {
+  const fileParam = req.query.file as string;
+  if (!fileParam) {
+    return res.status(400).send('File parameter required');
   }
 
-  const isBuild = 
-    file.fieldname === 'buildFile' || 
-    req.body?.isBuild === 'true' || 
-    /\.(zip|rar|7z|apk|exe|app|AppImage|tar|gz)$/i.test(file.originalname);
+  // Sanitize path to prevent directory traversal
+  let safeRelativePath = fileParam.replace(/^(\/uploads\/|uploads\/)/, '');
+  safeRelativePath = path.normalize(safeRelativePath).replace(/^(\.\.[\/\\])+/, '');
+  const absolutePath = path.join(UPLOADS_DIR, safeRelativePath);
 
-  const subFolder = isBuild ? 'builds' : '';
-  const fileUrl = `/uploads/${subFolder ? subFolder + '/' : ''}${file.filename}`;
-  const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1) + ' MB';
+  if (!fs.existsSync(absolutePath)) {
+    return res.status(404).send('Build file not found on server. It may have been removed or uploaded as an external link.');
+  }
 
-  res.json({
-    success: true,
-    fileUrl,
-    fileName: file.originalname,
-    storedName: file.filename,
-    fileSize: fileSizeMB,
-    mimeType: file.mimetype
+  const filename = path.basename(absolutePath);
+  res.setHeader('Content-Type', 'application/octet-stream');
+  res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
+  res.download(absolutePath, filename, (err) => {
+    if (err && !res.headersSent) {
+      console.error('Download error:', err);
+      res.status(500).send('Failed to stream file');
+    }
+  });
+});
+
+// 10. Upload File Endpoint (Builds, Cover Images, Screenshots, Videos) - Admin Only
+app.post('/api/upload', requireAdminAuth, (req, res) => {
+  upload.any()(req, res, (err: any) => {
+    if (err) {
+      console.error('Multer upload error:', err);
+      return res.status(400).json({ 
+        error: err.message || 'File upload failed. File may exceed maximum payload limits.' 
+      });
+    }
+
+    const file = (req.files as Express.Multer.File[])?.[0] || (req as any).file;
+    if (!file) {
+      return res.status(400).json({ error: 'No file received' });
+    }
+
+    const isBuild = 
+      file.fieldname === 'buildFile' || 
+      req.body?.isBuild === 'true' || 
+      /\.(zip|rar|7z|apk|exe|app|AppImage|tar|gz)$/i.test(file.originalname);
+
+    const subFolder = isBuild ? 'builds' : '';
+    const fileUrl = `/uploads/${subFolder ? subFolder + '/' : ''}${file.filename}`;
+    const fileSizeMB = file.size >= 1024 * 1024 * 1024
+      ? (file.size / (1024 * 1024 * 1024)).toFixed(2) + ' GB'
+      : (file.size / (1024 * 1024)).toFixed(1) + ' MB';
+
+    return res.json({
+      success: true,
+      fileUrl,
+      fileName: file.originalname,
+      storedName: file.filename,
+      fileSize: fileSizeMB,
+      mimeType: file.mimetype
+    });
   });
 });
 

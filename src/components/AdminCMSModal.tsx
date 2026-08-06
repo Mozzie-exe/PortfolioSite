@@ -290,33 +290,25 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
       console.warn('Backend API upload unavailable or timed out, using client-side file handler:', err);
     }
 
-    // Client-side fallback if server API is unavailable or offline
-    if (!uploadedUrl) {
+    // For images, if server API failed, fallback to client-side compressed Data URL
+    if (!uploadedUrl && targetField !== 'build') {
       try {
-        if (targetField === 'build' || file.size > 50 * 1024 * 1024) {
-          // Use instant Blob URL for files >50MB or game builds to avoid browser JS RAM exhaustion
-          uploadedUrl = URL.createObjectURL(file);
-        } else if (!file.type.startsWith('image/')) {
-          uploadedUrl = await readFileAsDataUrl(file);
-        } else {
+        if (file.type.startsWith('image/')) {
           uploadedUrl = await compressAndResizeImage(file);
+        } else {
+          uploadedUrl = await readFileAsDataUrl(file);
         }
       } catch (err) {
         console.error('Client file reading error:', err);
       }
     }
 
-    // If still no URL, fallback to object URL so user can always attach local builds
     if (!uploadedUrl) {
-      try {
-        uploadedUrl = URL.createObjectURL(file);
-      } catch (err) {
-        console.error('Object URL creation error:', err);
+      if (targetField === 'build') {
+        alert(`Server upload for "${file.name}" (${formattedSize}) failed or timed out.\n\nFor large build archives (>500MB - 1.5GB), please upload your file to Google Drive, Mega, or Dropbox, copy the direct share link, and paste it into the "File URL" input box below.`);
+      } else {
+        alert(`Could not process "${file.name}". Please select a valid file.`);
       }
-    }
-
-    if (!uploadedUrl) {
-      alert(`Could not process "${file.name}". Please select a valid file.`);
       setUploading(false);
       setUploadProgressMsg('');
       inputEl.value = '';

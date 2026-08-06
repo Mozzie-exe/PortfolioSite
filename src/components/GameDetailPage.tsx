@@ -47,13 +47,37 @@ export const GameDetailPage: React.FC<GameDetailPageProps> = ({
     setDownloadingBuildId(build.id);
     onRecordDownload(game.id, build.id);
 
-    // Trigger file download via anchor click
     setTimeout(() => {
       setDownloadingBuildId(null);
+
+      // 1. Detect invalid local blob or data URLs from previous session
+      if (build.fileUrl.startsWith('blob:') || build.fileUrl.startsWith('data:')) {
+        alert(
+          `The download link for "${build.title}" is an expired local browser file reference.\n\n` +
+          `Please log into Admin CMS, select this game, and either:\n` +
+          `1. Upload the build file again via the "Upload .zip/.apk" button\n` +
+          `2. Or paste a direct Google Drive / Mega / Dropbox download link into the File URL input box.`
+        );
+        return;
+      }
+
       setDownloadSuccessMessage(`Downloading ${build.title} (${build.fileName}). Check your browser downloads!`);
-      
+
+      // 2. Handle External URLs (Google Drive, Mega, Dropbox, external CDN)
+      if (build.fileUrl.startsWith('http://') || build.fileUrl.startsWith('https://')) {
+        window.open(build.fileUrl, '_blank');
+        setTimeout(() => setDownloadSuccessMessage(null), 6000);
+        return;
+      }
+
+      // 3. Handle Server Uploaded Files (/uploads/builds/...)
+      let downloadUrl = build.fileUrl;
+      if (build.fileUrl.startsWith('/uploads/') || build.fileUrl.startsWith('uploads/')) {
+        downloadUrl = `/api/download?file=${encodeURIComponent(build.fileUrl)}`;
+      }
+
       const link = document.createElement('a');
-      link.href = build.fileUrl;
+      link.href = downloadUrl;
       link.download = build.fileName || `${game.title.replace(/\s+/g, '_')}_${build.platform}.zip`;
       link.target = '_blank';
       document.body.appendChild(link);
