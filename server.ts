@@ -9,9 +9,9 @@ import type { GameProject } from './src/types.js';
 const app = express();
 const PORT = 3000;
 
-// Enable JSON parsing
-app.use(express.json({ limit: '100mb' }));
-app.use(express.urlencoded({ extended: true, limit: '100mb' }));
+// Enable JSON parsing with 2GB limit for large file uploads
+app.use(express.json({ limit: '2000mb' }));
+app.use(express.urlencoded({ extended: true, limit: '2000mb' }));
 
 // Directories (uses /tmp on Vercel / serverless environments to avoid read-only filesystem errors)
 const isServerless = Boolean(process.env.VERCEL || process.env.NOW_REGION || process.env.AWS_LAMBDA_FUNCTION_NAME);
@@ -91,7 +91,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 500 * 1024 * 1024 } // 500MB max limit per file
+  limits: { fileSize: 2000 * 1024 * 1024 } // 2GB (2000MB) max limit per file for game builds
 });
 
 // Admin config storage

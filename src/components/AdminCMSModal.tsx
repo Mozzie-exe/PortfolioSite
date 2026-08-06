@@ -231,23 +231,32 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
     });
   };
 
+  // Helper to format file sizes up to several GBs
+  const formatFileSize = (bytes: number): string => {
+    if (bytes >= 1024 * 1024 * 1024) {
+      return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+    }
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
   // Upload file handler with API + Compressed client fallback
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, targetField: 'cover' | 'screenshot' | 'build') => {
     const inputEl = e.target;
     const file = inputEl.files?.[0];
     if (!file) return;
 
+    const formattedSize = formatFileSize(file.size);
     setUploading(true);
-    setUploadProgressMsg(`Uploading ${file.name} (${(file.size / (1024 * 1024)).toFixed(1)} MB)... Please wait.`);
+    setUploadProgressMsg(`Uploading ${file.name} (${formattedSize})... Please wait.`);
 
     let uploadedUrl: string | null = null;
     let uploadedFileName = file.name;
-    let uploadedFileSize = `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
+    let uploadedFileSize = formattedSize;
 
     try {
       const controller = new AbortController();
-      // 10 minute timeout for large game builds up to 500MB
-      const fetchTimeoutId = setTimeout(() => controller.abort(), 10 * 60 * 1000);
+      // 30 minute timeout for large game builds up to 2GB
+      const fetchTimeoutId = setTimeout(() => controller.abort(), 30 * 60 * 1000);
 
       const uploadFormData = new FormData();
       if (targetField === 'build' || /\.(zip|rar|7z|apk|exe|app|AppImage|tar|gz)$/i.test(file.name)) {
@@ -278,13 +287,16 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
         console.warn('Server upload endpoint returned non-OK or non-JSON:', res.status);
       }
     } catch (err) {
-      console.warn('Backend API upload unavailable or timed out, using client-side file reader:', err);
+      console.warn('Backend API upload unavailable or timed out, using client-side file handler:', err);
     }
 
     // Client-side fallback if server API is unavailable or offline
     if (!uploadedUrl) {
       try {
-        if (targetField === 'build' || !file.type.startsWith('image/')) {
+        if (targetField === 'build' || file.size > 50 * 1024 * 1024) {
+          // Use instant Blob URL for files >50MB or game builds to avoid browser JS RAM exhaustion
+          uploadedUrl = URL.createObjectURL(file);
+        } else if (!file.type.startsWith('image/')) {
           uploadedUrl = await readFileAsDataUrl(file);
         } else {
           uploadedUrl = await compressAndResizeImage(file);
