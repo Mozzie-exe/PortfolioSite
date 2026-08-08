@@ -106,10 +106,31 @@ export async function incrementLikesInFirestore(gameId: string): Promise<void> {
 }
 
 /**
- * Increment downloads count for a game
+ * Increment downloads count for a game and specific build
  */
-export async function incrementDownloadsInFirestore(gameId: string): Promise<void> {
+export async function incrementDownloadsInFirestore(gameId: string, buildId?: string): Promise<void> {
   const docRef = doc(db, GAMES_COLLECTION, gameId);
+  try {
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      const data = docSnap.data() as GameProject;
+      const updatedDownloads = (data.downloadsCount || 0) + 1;
+      let updatedBuilds = data.builds || [];
+      if (buildId) {
+        updatedBuilds = updatedBuilds.map((b) =>
+          b.id === buildId ? { ...b, downloadCount: (b.downloadCount || 0) + 1 } : b
+        );
+      }
+      await updateDoc(docRef, {
+        downloadsCount: updatedDownloads,
+        builds: updatedBuilds
+      });
+      return;
+    }
+  } catch (e) {
+    console.warn('Could not update build download count in Firestore, falling back to increment:', e);
+  }
+
   await updateDoc(docRef, {
     downloadsCount: increment(1)
   });

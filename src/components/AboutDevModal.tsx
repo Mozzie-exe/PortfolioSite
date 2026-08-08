@@ -7,18 +7,18 @@ interface AboutDevModalProps {
 
 export const AboutDevModal: React.FC<AboutDevModalProps> = ({ onClose }) => {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#020204]/95 backdrop-blur-xl animate-fadeIn">
-      <div className="relative w-full max-w-2xl bg-[#020204] border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-[#020204]/95 backdrop-blur-xl animate-fadeIn">
+      <div className="relative w-full max-w-2xl max-h-[90vh] bg-[#020204] border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
         
         {/* Header */}
-        <div className="p-5 bg-white/[0.02] border-b border-white/10 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-400">
-              <Gamepad2 className="w-5 h-5" />
+        <div className="p-4 sm:p-5 bg-white/[0.02] border-b border-white/10 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="p-2 sm:p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-400">
+              <Gamepad2 className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
             <div>
-              <h2 className="text-sm font-mono uppercase tracking-widest font-extrabold text-white">Mozzie — Kerem Guvenli</h2>
-              <p className="text-xs text-slate-400 font-light">Lead Game Architect & Systems Engineer</p>
+              <h2 className="text-xs sm:text-sm font-mono uppercase tracking-widest font-extrabold text-white">Mozzie — Kerem Guvenli</h2>
+              <p className="text-[10px] sm:text-xs text-slate-400 font-light">Lead Game Architect & Systems Engineer</p>
             </div>
           </div>
           <button
@@ -30,10 +30,10 @@ export const AboutDevModal: React.FC<AboutDevModalProps> = ({ onClose }) => {
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-6 text-xs text-slate-300">
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 text-xs text-slate-300 overflow-y-auto">
           
           {/* Bio Summary */}
-          <div className="p-4 rounded-xl bg-white/[0.02] border border-white/10 font-light">
+          <div className="p-3.5 sm:p-4 rounded-xl bg-white/[0.02] border border-white/10 font-light">
             <h3 className="text-xs font-mono uppercase tracking-wider font-bold text-white mb-2 flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-purple-400" /> Professional Summary
             </h3>
@@ -47,7 +47,7 @@ export const AboutDevModal: React.FC<AboutDevModalProps> = ({ onClose }) => {
             <h3 className="text-xs font-mono uppercase tracking-widest text-purple-400 mb-3 flex items-center gap-2">
               <Cpu className="w-4 h-4" /> Technical Proficiency & Tooling
             </h3>
-            <div className="grid grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5">
               {[
                 { title: 'Unity Engine 6 & 2022 LTS', desc: 'HDRP, URP, Custom Render Pipelines' },
                 { title: 'C# / Native C++ Plugins', desc: 'Burst Compiler, SIMD Jobs System' },

@@ -174,6 +174,14 @@ export default function App() {
 
   // Like game in Firestore & API
   const handleLikeGame = async (gameId: string) => {
+    // Optimistic local state update
+    setGames((prev) =>
+      prev.map((g) => (g.id === gameId ? { ...g, likesCount: g.likesCount + 1 } : g))
+    );
+    if (selectedGame && selectedGame.id === gameId) {
+      setSelectedGame((prev) => (prev ? { ...prev, likesCount: prev.likesCount + 1 } : null));
+    }
+
     try {
       await incrementLikesInFirestore(gameId);
     } catch (err) {
@@ -185,29 +193,11 @@ export default function App() {
     } catch (err) {
       console.warn('Backend like endpoint unavailable:', err);
     }
-
-    setGames((prev) =>
-      prev.map((g) => (g.id === gameId ? { ...g, likesCount: g.likesCount + 1 } : g))
-    );
-    if (selectedGame && selectedGame.id === gameId) {
-      setSelectedGame((prev) => (prev ? { ...prev, likesCount: prev.likesCount + 1 } : null));
-    }
   };
 
   // Record Download event in Firestore & API
   const handleRecordDownload = async (gameId: string, buildId: string) => {
-    try {
-      await incrementDownloadsInFirestore(gameId);
-    } catch (err) {
-      console.error('Firestore download count increment error:', err);
-    }
-
-    try {
-      await fetch(`/api/games/${gameId}/download/${buildId}`, { method: 'POST' });
-    } catch (err) {
-      console.warn('Backend download endpoint unavailable:', err);
-    }
-
+    // Optimistic local state update
     setGames((prev) =>
       prev.map((g) =>
         g.id === gameId
@@ -215,7 +205,7 @@ export default function App() {
               ...g,
               downloadsCount: g.downloadsCount + 1,
               builds: g.builds.map((b) =>
-                b.id === buildId ? { ...b, downloadCount: b.downloadCount + 1 } : b
+                b.id === buildId ? { ...b, downloadCount: (b.downloadCount || 0) + 1 } : b
               )
             }
           : g
@@ -228,11 +218,23 @@ export default function App() {
               ...prev,
               downloadsCount: prev.downloadsCount + 1,
               builds: prev.builds.map((b) =>
-                b.id === buildId ? { ...b, downloadCount: b.downloadCount + 1 } : b
+                b.id === buildId ? { ...b, downloadCount: (b.downloadCount || 0) + 1 } : b
               )
             }
           : null
       );
+    }
+
+    try {
+      await incrementDownloadsInFirestore(gameId, buildId);
+    } catch (err) {
+      console.error('Firestore download count increment error:', err);
+    }
+
+    try {
+      await fetch(`/api/games/${gameId}/download/${buildId}`, { method: 'POST' });
+    } catch (err) {
+      console.warn('Backend download endpoint unavailable:', err);
     }
   };
 

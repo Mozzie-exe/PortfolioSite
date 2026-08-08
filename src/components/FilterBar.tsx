@@ -40,13 +40,13 @@ export const FilterBar: React.FC<FilterBarProps> = ({
         </div>
 
         {/* Dropdowns */}
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:flex lg:flex-wrap items-center gap-2 sm:gap-3">
           
           {/* Genre Filter */}
           <select
             value={filters.selectedGenre}
             onChange={(e) => onFilterChange({ selectedGenre: e.target.value })}
-            className="px-3.5 py-2.5 bg-[#020204] border border-white/10 rounded-xl text-xs font-mono text-slate-200 focus:outline-none focus:border-purple-500/80 cursor-pointer"
+            className="w-full lg:w-auto px-3 py-2.5 bg-[#020204] border border-white/10 rounded-xl text-xs font-mono text-slate-200 focus:outline-none focus:border-purple-500/80 cursor-pointer truncate"
           >
             <option value="ALL">All Genres</option>
             {availableGenres.map((g) => (
@@ -58,7 +58,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
           <select
             value={filters.selectedPlatform}
             onChange={(e) => onFilterChange({ selectedPlatform: e.target.value })}
-            className="px-3.5 py-2.5 bg-[#020204] border border-white/10 rounded-xl text-xs font-mono text-slate-200 focus:outline-none focus:border-purple-500/80 cursor-pointer"
+            className="w-full lg:w-auto px-3 py-2.5 bg-[#020204] border border-white/10 rounded-xl text-xs font-mono text-slate-200 focus:outline-none focus:border-purple-500/80 cursor-pointer truncate"
           >
             <option value="ALL">All Platforms</option>
             <option value="windows">Windows (.exe)</option>
@@ -72,7 +72,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
           <select
             value={filters.selectedStatus}
             onChange={(e) => onFilterChange({ selectedStatus: e.target.value })}
-            className="px-3.5 py-2.5 bg-[#020204] border border-white/10 rounded-xl text-xs font-mono text-slate-200 focus:outline-none focus:border-purple-500/80 cursor-pointer"
+            className="w-full lg:w-auto px-3 py-2.5 bg-[#020204] border border-white/10 rounded-xl text-xs font-mono text-slate-200 focus:outline-none focus:border-purple-500/80 cursor-pointer truncate"
           >
             <option value="ALL">All Statuses</option>
             <option value="Released">Released</option>
@@ -85,7 +85,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
           <select
             value={filters.sortBy}
             onChange={(e) => onFilterChange({ sortBy: e.target.value as any })}
-            className="px-3.5 py-2.5 bg-[#020204] border border-white/10 rounded-xl text-xs font-mono text-slate-200 focus:outline-none focus:border-purple-500/80 cursor-pointer"
+            className="w-full lg:w-auto px-3 py-2.5 bg-[#020204] border border-white/10 rounded-xl text-xs font-mono text-slate-200 focus:outline-none focus:border-purple-500/80 cursor-pointer truncate"
           >
             <option value="featured">Featured First</option>
             <option value="newest">Newest Releases</option>
@@ -97,11 +97,11 @@ export const FilterBar: React.FC<FilterBarProps> = ({
           {(filters.searchQuery || filters.selectedGenre !== 'ALL' || filters.selectedPlatform !== 'ALL' || filters.selectedStatus !== 'ALL') && (
             <button
               onClick={onReset}
-              className="p-2.5 bg-white/[0.05] hover:bg-white/[0.1] text-slate-300 border border-white/10 rounded-xl text-xs font-mono transition-colors flex items-center gap-1.5 cursor-pointer"
+              className="col-span-2 sm:col-span-1 p-2.5 bg-white/[0.05] hover:bg-white/[0.1] text-slate-300 border border-white/10 rounded-xl text-xs font-mono transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
               title="Reset Filters"
             >
               <RotateCcw className="w-3.5 h-3.5 text-purple-400" />
-              <span>Reset</span>
+              <span>Reset Filters</span>
             </button>
           )}
 

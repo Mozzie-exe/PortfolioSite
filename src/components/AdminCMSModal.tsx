@@ -323,7 +323,7 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
         screenshots: [...(prev.screenshots || []), uploadedUrl!]
       }));
     } else if (targetField === 'build') {
-      const autoTitle = file.name.replace(/\.[^/.]+$/, '');
+      const autoTitle = uploadedFileName || file.name;
       const newBuildObj: GameBuild = {
         id: 'build-' + Date.now(),
         platform: newBuildPlatform,
@@ -388,6 +388,13 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
     }));
   };
 
+  const handleUpdateBuildField = (buildId: string, field: keyof GameBuild, value: any) => {
+    setFormData((prev) => ({
+      ...prev,
+      builds: (prev.builds || []).map((b) => (b.id === buildId ? { ...b, [field]: value } : b))
+    }));
+  };
+
   // Save Game Form Submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -422,31 +429,31 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
       <div className="relative w-full max-w-5xl h-[90vh] bg-[#020204] border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
         
         {/* Modal Header */}
-        <div className="p-5 bg-white/[0.02] border-b border-white/10 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-400">
-              <Sparkles className="w-5 h-5" />
+        <div className="p-3.5 sm:p-5 bg-white/[0.02] border-b border-white/10 flex items-center justify-between gap-2 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <div className="p-2 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-400 shrink-0">
+              <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
-            <div>
-              <h2 className="text-sm font-mono uppercase tracking-widest font-extrabold text-white">Studio Admin CMS Dashboard</h2>
-              <p className="text-xs text-slate-400 font-light">Add, update, or upload new game builds & media showcase</p>
+            <div className="min-w-0">
+              <h2 className="text-xs sm:text-sm font-mono uppercase tracking-widest font-extrabold text-white truncate">Studio Admin CMS</h2>
+              <p className="text-[10px] sm:text-xs text-slate-400 font-light truncate hidden xs:block">Add, update, or upload new game builds & media showcase</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               type="button"
               onClick={() => setShowPasswordChangeModal(true)}
-              className="px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-purple-300 border border-purple-500/30 transition-all text-xs font-mono flex items-center gap-1.5 cursor-pointer"
+              className="px-2.5 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-purple-300 border border-purple-500/30 transition-all text-[11px] sm:text-xs font-mono flex items-center gap-1 sm:gap-1.5 cursor-pointer"
               title="Change Admin Password"
             >
               <KeyRound className="w-3.5 h-3.5 text-purple-400" />
-              <span>Change Passcode</span>
+              <span className="hidden xs:inline">Passcode</span>
             </button>
             <button
               onClick={onClose}
-              className="p-2 rounded-xl hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
+              className="p-1.5 sm:p-2 rounded-xl hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
           </div>
         </div>
@@ -524,10 +531,10 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
         <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
           
           {/* Left Sidebar: Game Projects Selector */}
-          <div className="w-full md:w-64 bg-black/60 border-r border-white/10 p-4 flex flex-col shrink-0 overflow-y-auto">
+          <div className="w-full md:w-64 max-h-48 md:max-h-none bg-black/60 border-b md:border-b-0 md:border-r border-white/10 p-3 sm:p-4 flex flex-col shrink-0 overflow-y-auto">
             <button
               onClick={handleStartCreateNew}
-              className={`w-full py-2.5 px-3 rounded-xl border text-xs font-mono uppercase tracking-wider transition-all flex items-center justify-center gap-2 mb-4 cursor-pointer ${
+              className={`w-full py-2.5 px-3 rounded-xl border text-xs font-mono uppercase tracking-wider transition-all flex items-center justify-center gap-2 mb-3 cursor-pointer shrink-0 ${
                 isCreatingNew
                   ? 'bg-purple-500 text-slate-950 border-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.4)] font-bold'
                   : 'bg-white/[0.03] hover:bg-white/[0.08] text-purple-400 border-white/10'
@@ -537,7 +544,7 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
               <span>Upload New Game</span>
             </button>
 
-            <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-slate-400 mb-2">
+            <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-slate-400 mb-2 block shrink-0">
               Existing Projects ({games.length})
             </span>
 
@@ -553,8 +560,8 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                   }`}
                 >
                   <div className="truncate mr-2">
-                    <span className="font-mono font-bold block truncate uppercase">{g.title}</span>
-                    <span className="text-[10px] text-slate-400 block font-mono">{g.unityVersion}</span>
+                    <span className="font-mono font-bold block truncate uppercase text-[11px] sm:text-xs">{g.title}</span>
+                    <span className="text-[9px] sm:text-[10px] text-slate-400 block font-mono">{g.unityVersion}</span>
                   </div>
 
                   <button
@@ -562,7 +569,7 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                       e.stopPropagation();
                       handleDelete(g.id);
                     }}
-                    className="p-1 rounded text-slate-500 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="p-1 rounded text-slate-500 hover:text-rose-400 opacity-80 sm:opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shrink-0"
                     title="Delete Project"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -573,7 +580,7 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
           </div>
 
           {/* Right Form Area */}
-          <div className="flex-1 p-6 overflow-y-auto bg-[#020204]">
+          <div className="flex-1 p-3.5 sm:p-6 overflow-y-auto bg-[#020204]">
             {editingGameId || isCreatingNew ? (
               <form onSubmit={handleSubmit} className="space-y-6">
                 
@@ -796,23 +803,80 @@ export const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                     <FileArchive className="w-4 h-4" /> Downloadable Game Build Manager (.zip, .apk, .exe)
                   </h4>
 
-                  {/* Existing Builds List */}
-                  <div className="space-y-2">
+                  {/* Existing Builds List with Editable Version & Fields */}
+                  <div className="space-y-3">
                     {formData.builds && formData.builds.length > 0 ? (
                       formData.builds.map((b) => (
-                        <div key={b.id} className="p-3 rounded-xl bg-[#020204] border border-white/10 flex items-center justify-between text-xs font-mono">
-                          <div>
-                            <span className="font-bold text-purple-400 uppercase mr-2">[{b.platform}]</span>
-                            <span className="text-slate-200 font-semibold">{b.title}</span>
-                            <span className="text-slate-400 text-[10px] ml-2">({b.fileSize} • {b.fileName})</span>
+                        <div key={b.id} className="p-3.5 rounded-xl bg-[#020204] border border-white/10 space-y-2.5 font-mono text-xs">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 flex-1">
+                              <span className="font-bold text-purple-300 uppercase text-[10px] bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/30">
+                                {b.platform}
+                              </span>
+                              <span className="text-slate-400 text-[10px]">
+                                ({b.fileSize} • {b.fileName})
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveBuild(b.id)}
+                              className="p-1 text-slate-500 hover:text-rose-400 transition-colors cursor-pointer"
+                              title="Delete this build"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveBuild(b.id)}
-                            className="p-1 text-slate-500 hover:text-rose-400"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            <div>
+                              <label className="block text-[10px] text-slate-400 mb-0.5">Build Title</label>
+                              <input
+                                type="text"
+                                value={b.title || ''}
+                                onChange={(e) => handleUpdateBuildField(b.id, 'title', e.target.value)}
+                                className="w-full px-2.5 py-1.5 bg-white/[0.03] border border-white/10 rounded-lg text-xs text-white focus:outline-none focus:border-purple-500"
+                                placeholder="e.g. Win64 Standalone"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-[10px] text-purple-300 font-bold mb-0.5">Build Version *</label>
+                              <input
+                                type="text"
+                                value={b.version || ''}
+                                onChange={(e) => handleUpdateBuildField(b.id, 'version', e.target.value)}
+                                className="w-full px-2.5 py-1.5 bg-purple-500/10 border border-purple-500/40 rounded-lg text-xs text-purple-200 font-bold focus:outline-none focus:border-purple-400"
+                                placeholder="e.g. 1.2.0"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-[10px] text-slate-400 mb-0.5">Platform</label>
+                              <select
+                                value={b.platform}
+                                onChange={(e) => handleUpdateBuildField(b.id, 'platform', e.target.value as PlatformType)}
+                                className="w-full px-2.5 py-1.5 bg-[#020204] border border-white/10 rounded-lg text-xs text-white focus:outline-none focus:border-purple-500"
+                              >
+                                <option value="windows">Windows</option>
+                                <option value="mac">macOS</option>
+                                <option value="linux">Linux</option>
+                                <option value="webgl">WebGL</option>
+                                <option value="android">Android</option>
+                                <option value="ios">iOS</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="block text-[10px] text-slate-400 mb-0.5">File URL / Download Link</label>
+                            <input
+                              type="text"
+                              value={b.fileUrl || ''}
+                              onChange={(e) => handleUpdateBuildField(b.id, 'fileUrl', e.target.value)}
+                              className="w-full px-2.5 py-1.5 bg-white/[0.03] border border-white/10 rounded-lg text-[11px] text-slate-300 focus:outline-none focus:border-purple-500 font-mono"
+                              placeholder="File path or URL"
+                            />
+                          </div>
                         </div>
                       ))
                     ) : (

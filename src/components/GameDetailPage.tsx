@@ -129,7 +129,7 @@ export const GameDetailPage: React.FC<GameDetailPageProps> = ({
             }`}
           >
             <Heart className={`w-4 h-4 ${hasLiked ? 'fill-rose-500 text-rose-500' : 'text-slate-400'}`} />
-            <span>{game.likesCount + (hasLiked ? 1 : 0)} Likes</span>
+            <span>{game.likesCount} Likes</span>
           </button>
         </div>
       </div>
@@ -237,7 +237,7 @@ export const GameDetailPage: React.FC<GameDetailPageProps> = ({
             </div>
 
             {/* Thumbnails Row */}
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
               {(game.screenshots || []).map((imgUrl, idx) => (
                 <button
                   key={idx}
@@ -317,17 +317,17 @@ export const GameDetailPage: React.FC<GameDetailPageProps> = ({
                     className="p-4 rounded-xl bg-[#020204] border border-white/10 hover:border-purple-500/40 transition-all flex flex-col justify-between gap-3 group"
                   >
                     <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-mono uppercase font-bold text-white group-hover:text-purple-400 transition-colors">
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <span className="text-xs font-mono uppercase font-bold text-white group-hover:text-purple-400 transition-colors truncate">
                           {build.title}
                         </span>
-                        <span className="px-2 py-0.5 rounded text-[9px] font-mono font-bold uppercase bg-purple-500/10 text-purple-300 border border-purple-500/30">
+                        <span className="px-2 py-0.5 rounded text-[9px] font-mono font-bold uppercase bg-purple-500/10 text-purple-300 border border-purple-500/30 shrink-0">
                           {build.platform}
                         </span>
                       </div>
                       
-                      <div className="flex items-center gap-2 text-[11px] text-slate-400 font-mono">
-                        <span>{build.fileName}</span>
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-slate-400 font-mono break-all">
+                        <span className="text-slate-300 font-semibold">{build.fileName}</span>
                         <span>•</span>
                         <span className="text-purple-300 font-bold">{build.fileSize}</span>
                         <span>•</span>
