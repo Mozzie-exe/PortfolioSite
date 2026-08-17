@@ -9,6 +9,7 @@ import { GameDetailPage } from './components/GameDetailPage';
 import { AdminCMSModal } from './components/AdminCMSModal';
 import { AdminLoginModal } from './components/AdminLoginModal';
 import { AboutDevModal } from './components/AboutDevModal';
+import { ContactModal } from './components/ContactModal';
 import { Gamepad2, Layers, RefreshCw, Sparkles, AlertCircle } from 'lucide-react';
 import {
   subscribeGames,
@@ -84,6 +85,7 @@ export default function App() {
   const [adminOpen, setAdminOpen] = useState(false);
   const [adminLoginOpen, setAdminLoginOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
+  const [contactOpen, setContactOpen] = useState(false);
 
   const handleSuccessAdminLogin = (token: string) => {
     setIsAdminLoggedIn(true);
@@ -356,6 +358,7 @@ export default function App() {
           }
         }}
         onOpenAbout={() => setAboutOpen(true)}
+        onOpenContact={() => setContactOpen(true)}
         activeTab={selectedGame ? 'detail' : 'showcase'}
         onNavigateHome={() => setSelectedGame(null)}
         gamesCount={games.length}
@@ -503,6 +506,13 @@ export default function App() {
       {aboutOpen && (
         <AboutDevModal
           onClose={() => setAboutOpen(false)}
+        />
+      )}
+
+      {/* Developer Contact Modal */}
+      {contactOpen && (
+        <ContactModal
+          onClose={() => setContactOpen(false)}
         />
       )}
 

@@ -1,9 +1,10 @@
 import React from 'react';
-import { Gamepad2, Layers, PlusCircle, UserCheck, Lock, ShieldCheck, LogOut } from 'lucide-react';
+import { Gamepad2, Layers, UserCheck, Lock, ShieldCheck, LogOut, Mail } from 'lucide-react';
 
 interface HeaderProps {
   onOpenAdmin: () => void;
   onOpenAbout: () => void;
+  onOpenContact: () => void;
   activeTab: 'showcase' | 'detail';
   onNavigateHome: () => void;
   gamesCount: number;
@@ -14,6 +15,7 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({
   onOpenAdmin,
   onOpenAbout,
+  onOpenContact,
   activeTab,
   onNavigateHome,
   gamesCount,
@@ -71,10 +73,20 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Action Buttons */}
         <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
           
+          {/* Contact Popup Trigger */}
+          <button
+            onClick={onOpenContact}
+            className="px-2.5 py-2 sm:px-3.5 sm:py-2.5 text-[10px] sm:text-[11px] uppercase tracking-widest font-bold rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 hover:border-purple-500/50 transition-all flex items-center gap-1.5 sm:gap-2 shadow-sm cursor-pointer active:scale-95"
+            title="Contact Kerem Guvenli (Mozzie)"
+          >
+            <Mail className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-400" />
+            <span>Contact</span>
+          </button>
+
           {/* Developer Bio Trigger */}
           <button
             onClick={onOpenAbout}
-            className="px-2.5 py-2 sm:px-3.5 sm:py-2.5 text-[10px] sm:text-[11px] uppercase tracking-widest font-bold rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-200 border border-white/10 hover:border-purple-500/30 transition-all flex items-center gap-1.5 sm:gap-2 shadow-sm"
+            className="px-2.5 py-2 sm:px-3.5 sm:py-2.5 text-[10px] sm:text-[11px] uppercase tracking-widest font-bold rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-200 border border-white/10 hover:border-purple-500/30 transition-all flex items-center gap-1.5 sm:gap-2 shadow-sm cursor-pointer"
           >
             <UserCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-400" />
             <span className="hidden xs:inline">Dev Specs</span>
@@ -103,7 +115,7 @@ export const Header: React.FC<HeaderProps> = ({
           ) : (
             <button
               onClick={onOpenAdmin}
-              className="px-2.5 py-2 sm:px-3.5 sm:py-2.5 text-[10px] sm:text-[11px] uppercase tracking-widest font-bold rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 transition-all flex items-center gap-1.5 sm:gap-2 cursor-pointer"
+              className="px-2.5 py-2 sm:px-3.5 sm:py-2.5 text-[10px] sm:text-[11px] uppercase tracking-widest font-bold rounded-xl bg-white/[0.03] hover:bg-white/[0.08] text-slate-300 border border-white/10 hover:border-purple-500/30 transition-all flex items-center gap-1.5 sm:gap-2 cursor-pointer"
             >
               <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-400" />
               <span className="hidden xs:inline">Admin</span>

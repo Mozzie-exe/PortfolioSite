@@ -64,12 +64,14 @@ export const AboutDevModal: React.FC<AboutDevModalProps> = ({ onClose }) => {
             </div>
           </div>
 
-          {/* Capabilities */}
-          <div className="pt-4 border-t border-white/10 flex items-center justify-between text-slate-400 text-[11px] font-mono">
+          {/* Capabilities & Contact */}
+          <div className="pt-4 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-slate-400 text-[11px] font-mono">
             <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Windows, macOS, Linux & WebGL Targets
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> Istanbul, Turkey • Unity 6 / URP / HDRP
             </span>
-            <span className="text-purple-400 font-bold">kerem@mozzie.studio</span>
+            <span className="text-purple-400 font-bold select-all">
+              akguvenli0@gmail.com
+            </span>
           </div>
 
         </div>
