@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
 import { GameProject, GameBuild } from '../types';
 import { 
-  ArrowLeft, Download, Play, Heart, Star, Calendar, Cpu, Monitor, 
+  ArrowLeft, Download, Play, Heart, Calendar, Cpu, Monitor, 
   CheckCircle, ShieldCheck, ChevronRight, X, ExternalLink, HardDrive, 
-  Layers, MessageSquare, Send, Sparkles, Terminal, FileCode, Check 
+  Layers, Sparkles, Terminal, FileCode, Check 
 } from 'lucide-react';
 
 interface GameDetailPageProps {
   game: GameProject;
   onBack: () => void;
   onLikeGame: (gameId: string) => void;
-  onAddReview: (gameId: string, author: string, rating: number, comment: string) => void;
   onRecordDownload: (gameId: string, buildId: string) => void;
 }
 
@@ -18,7 +17,6 @@ export const GameDetailPage: React.FC<GameDetailPageProps> = ({
   game,
   onBack,
   onLikeGame,
-  onAddReview,
   onRecordDownload
 }) => {
   const [selectedScreenshot, setSelectedScreenshot] = useState<string>(
@@ -36,12 +34,6 @@ export const GameDetailPage: React.FC<GameDetailPageProps> = ({
   const [downloadingBuildId, setDownloadingBuildId] = useState<string | null>(null);
   const [downloadSuccessMessage, setDownloadSuccessMessage] = useState<string | null>(null);
   const [hasLiked, setHasLiked] = useState(false);
-
-  // Review form state
-  const [reviewAuthor, setReviewAuthor] = useState('');
-  const [reviewRating, setReviewRating] = useState(5);
-  const [reviewComment, setReviewComment] = useState('');
-  const [reviewSubmitting, setReviewSubmitting] = useState(false);
 
   const handleDownload = (build: GameBuild) => {
     setDownloadingBuildId(build.id);
@@ -93,17 +85,6 @@ export const GameDetailPage: React.FC<GameDetailPageProps> = ({
       setHasLiked(true);
       onLikeGame(game.id);
     }
-  };
-
-  const handleReviewSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!reviewAuthor.trim() || !reviewComment.trim()) return;
-    
-    setReviewSubmitting(true);
-    await onAddReview(game.id, reviewAuthor, reviewRating, reviewComment);
-    setReviewSubmitting(false);
-    setReviewAuthor('');
-    setReviewComment('');
   };
 
   return (
@@ -173,12 +154,10 @@ export const GameDetailPage: React.FC<GameDetailPageProps> = ({
             </div>
             <div className="h-8 w-[1px] bg-white/10" />
             <div className="text-center px-3">
-              <span className="block text-2xl font-black font-mono text-amber-400">
-                {game.reviews && game.reviews.length > 0
-                  ? (game.reviews.reduce((a, b) => a + b.rating, 0) / game.reviews.length).toFixed(1)
-                  : '5.0'} ★
+              <span className="block text-2xl font-black font-mono text-rose-400">
+                {game.likesCount}
               </span>
-              <span className="text-[9px] uppercase tracking-widest font-mono text-slate-400">{game.reviews?.length || 1} Reviews</span>
+              <span className="text-[9px] uppercase tracking-widest font-mono text-slate-400">Likes</span>
             </div>
           </div>
         </div>
@@ -440,97 +419,6 @@ export const GameDetailPage: React.FC<GameDetailPageProps> = ({
 
         </div>
 
-      </div>
-
-      {/* Community Reviews & Feedback Section */}
-      <div className="bg-white/[0.02] border border-white/10 rounded-2xl p-6 sm:p-8 shadow-xl mb-12 backdrop-blur-md">
-        <h2 className="text-xs font-mono uppercase tracking-widest text-white mb-6 flex items-center gap-2">
-          <MessageSquare className="w-5 h-5 text-purple-400" />
-          Player & Reviewer Feedback
-        </h2>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          {/* Submit Review Form */}
-          <form onSubmit={handleReviewSubmit} className="bg-[#020204] p-5 rounded-xl border border-white/10 space-y-4">
-            <h3 className="text-xs font-mono uppercase tracking-wider font-bold text-white">Leave a Review</h3>
-            
-            <div>
-              <label className="block text-[11px] font-mono text-slate-400 mb-1">Your Name / Gaming Tag</label>
-              <input
-                type="text"
-                required
-                placeholder="e.g. Alex (Unity Developer)"
-                value={reviewAuthor}
-                onChange={(e) => setReviewAuthor(e.target.value)}
-                className="w-full px-3 py-2 bg-white/[0.03] border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:border-purple-500 font-mono"
-              />
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-mono text-slate-400 mb-1">Star Rating</label>
-              <div className="flex items-center gap-2">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    key={star}
-                    type="button"
-                    onClick={() => setReviewRating(star)}
-                    className="p-1 text-amber-400 cursor-pointer"
-                  >
-                    <Star className={`w-5 h-5 ${star <= reviewRating ? 'fill-amber-400' : 'text-slate-700'}`} />
-                  </button>
-                ))}
-                <span className="text-xs text-slate-400 font-mono font-bold ml-2">{reviewRating} / 5</span>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-mono text-slate-400 mb-1">Comment / Feedback</label>
-              <textarea
-                required
-                rows={3}
-                placeholder="Share your experience playing this build..."
-                value={reviewComment}
-                onChange={(e) => setReviewComment(e.target.value)}
-                className="w-full px-3 py-2 bg-white/[0.03] border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:border-purple-500 font-mono"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={reviewSubmitting}
-              className="w-full py-2.5 rounded-xl bg-purple-500 hover:bg-purple-400 text-slate-950 font-mono font-bold text-xs uppercase tracking-wider shadow-[0_0_15px_rgba(168,85,247,0.35)] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-            >
-              <Send className="w-3.5 h-3.5" />
-              <span>Submit Review</span>
-            </button>
-          </form>
-
-          {/* Existing Reviews List */}
-          <div className="lg:col-span-2 space-y-3">
-            {game.reviews && game.reviews.length > 0 ? (
-              game.reviews.map((rev) => (
-                <div key={rev.id} className="p-4 rounded-xl bg-[#020204] border border-white/10">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold font-mono text-white">{rev.author}</span>
-                    <div className="flex items-center gap-1">
-                      {[...Array(rev.rating)].map((_, i) => (
-                        <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />
-                      ))}
-                      <span className="text-[10px] font-mono text-slate-500 ml-2">{rev.date}</span>
-                    </div>
-                  </div>
-                  <p className="text-xs text-slate-300 leading-relaxed font-light">{rev.comment}</p>
-                </div>
-              ))
-            ) : (
-              <div className="p-6 rounded-xl bg-[#020204] border border-white/10 text-center text-xs font-mono text-slate-400">
-                Be the first player to submit feedback for this Unity project build!
-              </div>
-            )}
-          </div>
-
-        </div>
       </div>
 
       {/* Lightbox Modal for Screenshots */}

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { GameProject } from '../types';
-import { Play, Download, Sparkles, Monitor, Cpu, Star, ExternalLink, X } from 'lucide-react';
+import { Play, Download, Sparkles, Monitor, Cpu, Heart, ExternalLink, X } from 'lucide-react';
 
 interface HeroFeaturedProps {
   game: GameProject;
@@ -56,9 +56,9 @@ export const HeroFeatured: React.FC<HeroFeaturedProps> = ({ game, onSelectGame }
           <span className="px-3 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-emerald-300">
             {game.status}
           </span>
-          <span className="px-3 py-1 rounded-md bg-white/[0.04] border border-white/10 text-amber-300 flex items-center gap-1">
-            <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-            4.9 / 5
+          <span className="px-3 py-1 rounded-md bg-white/[0.04] border border-white/10 text-rose-300 flex items-center gap-1">
+            <Heart className="w-3.5 h-3.5 fill-rose-400 text-rose-400" />
+            {game.likesCount} Likes
           </span>
           <span className="px-3 py-1 rounded-md bg-white/[0.04] border border-white/10 text-slate-300">
             {game.downloadsCount.toLocaleString()} Downloads

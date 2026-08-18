@@ -1,6 +1,6 @@
 import React from 'react';
 import { GameProject, PlatformType } from '../types';
-import { Download, Star, Cpu, Monitor, Play, ShieldAlert, ArrowRight } from 'lucide-react';
+import { Download, Heart, Cpu, Monitor, Play, ShieldAlert, ArrowRight } from 'lucide-react';
 
 interface GameCardProps {
   game: GameProject;
@@ -20,10 +20,6 @@ const getPlatformIcon = (platform: PlatformType) => {
 };
 
 export const GameCard: React.FC<GameCardProps> = ({ game, onSelectGame }) => {
-  const averageRating = game.reviews && game.reviews.length > 0
-    ? (game.reviews.reduce((acc, r) => acc + r.rating, 0) / game.reviews.length).toFixed(1)
-    : '4.9';
-
   return (
     <div 
       onClick={() => onSelectGame(game)}
@@ -103,11 +99,11 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onSelectGame }) => {
             ))}
           </div>
 
-          {/* Downloads & Rating */}
+          {/* Downloads & Likes */}
           <div className="flex items-center gap-3 font-mono text-slate-300">
-            <span className="flex items-center gap-1 text-amber-400 text-xs">
-              <Star className="w-3 h-3 fill-amber-400" />
-              {averageRating}
+            <span className="flex items-center gap-1 text-rose-400 text-xs">
+              <Heart className="w-3 h-3 fill-rose-400" />
+              {game.likesCount}
             </span>
             <span className="flex items-center gap-1 text-slate-300 text-xs">
               <Download className="w-3 h-3 text-purple-400" />

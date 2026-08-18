@@ -374,7 +374,6 @@ export default function App() {
             game={selectedGame}
             onBack={() => setSelectedGame(null)}
             onLikeGame={handleLikeGame}
-            onAddReview={handleAddReview}
             onRecordDownload={handleRecordDownload}
           />
         ) : (
